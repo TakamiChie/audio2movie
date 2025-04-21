@@ -1,0 +1,32 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+}
+
+#controls {
+  margin-bottom: 10px;
+}
+
+#canvas {
+  border: 1px solid #ccc;
+  background-color: #000;
+  display: block;
+  margin-top: 10px;
+}
+
+input,
+select,
+button {
+  margin-right: 8px;
+}
+
+.inputrow {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  transition: all 0.2s ease;
+}
+
+.inputcol {
+  flex: 1;
+}
