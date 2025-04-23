@@ -1,8 +1,7 @@
 import jsmediatags from 'jsmediatags/dist/jsmediatags.min.js';
+import { waitFor } from './util.mjs';
 
 const fileInput = document.getElementById('fileInput');
-const logoInput = document.getElementById('logoInput');
-const bgInput = document.getElementById('bgInput');
 const titleInput = document.getElementById('titleInput');
 const albumInput = document.getElementById('albumInput');
 const speedSelect = document.getElementById('speedSelect');
@@ -11,6 +10,8 @@ const generateBtn = document.getElementById('generateBtn');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const downloadLink = document.getElementById('downloadLink');
+const logoSelectBtn = document.getElementById('logoSelectBtn');
+const bgSelectBtn = document.getElementById('bgSelectBtn');
 
 let audioPreview, audioRecord;
 let previewCtx, previewAnalyser, previewData;
@@ -19,7 +20,15 @@ let mediaRecorder,
   recordedChunks = [];
 
 const logoImg = new Image();
+logoImg.onload = () => {
+  logoLoaded = true;
+  testRendering();
+};
 const bgImg = new Image();
+bgImg.onload = () => {
+  bgLoaded = true;
+  testRendering();
+};
 let logoLoaded = false,
   bgLoaded = false;
 
@@ -27,25 +36,28 @@ let previewStart = null;
 let recordStart = null;
 const fadeDuration = 3000;
 
-logoInput.addEventListener('change', () => {
-  const f = logoInput.files[0];
-  if (!f) return;
-  logoLoaded = false;
-  logoImg.src = URL.createObjectURL(f);
-  logoImg.onload = () => {
-    logoLoaded = true;
-    testRendering();
-  };
+document.addEventListener('DOMContentLoaded', async () => {
+  await waitFor(() => window.api.loadImageBase64);
+  logoImg.src = await loadImgBase64('logo');
+  bgImg.src = await loadImgBase64('bg');
 });
-bgInput.addEventListener('change', () => {
-  const f = bgInput.files[0];
-  if (!f) return;
-  bgLoaded = false;
-  bgImg.src = URL.createObjectURL(f);
-  bgImg.onload = () => {
-    bgLoaded = true;
-    testRendering();
-  };
+
+logoSelectBtn.addEventListener('click', async () => {
+  const result = await window.api.selectImage();
+  if (result) {
+    logoLoaded = false;
+    await window.api.saveImageBase64('logo', result);
+    logoImg.src = await loadImgBase64('logo');
+  }
+});
+
+bgSelectBtn.addEventListener('click', async () => {
+  const result = await window.api.selectImage();
+  if (result) {
+    bgLoaded = false;
+    await window.api.saveImageBase64('bg', result);
+    bgImg.src = await loadImgBase64('bg');
+  }
 });
 
 fileInput.addEventListener('change', () => {
@@ -66,6 +78,13 @@ fileInput.addEventListener('change', () => {
 
 titleInput.addEventListener('input', testRendering);
 albumInput.addEventListener('input', testRendering);
+
+async function loadImgBase64(tag) {
+  const { base64, mime } = await window.api.loadImageBase64(tag);
+  if (base64 && mime) {
+    return `data:${mime};base64,${base64}`;
+  }
+}
 
 function testRendering() {
   if (!audioPreview) return;

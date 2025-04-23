@@ -1,51 +1,48 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="stylesheet" href="styles.css" />
-    <title>MP3→動画ジェネレータ</title>
-  </head>
-  <body>
-    <div id="controls">
-      <div class="inputrow">
-        <div class="inputcol">
-          <label for="fileInput">MP3ファイル:</label>
-          <input type="file" id="fileInput" accept=".mp3" />
-        </div>
-        <div class="inputcol">
-          <label for="logoInput">ロゴ画像:</label>
-          <input type="file" id="logoInput" accept="image/*" />
-        </div>
-        <div class="inputcol">
-          <label for="bgInput">背景画像:</label>
-          <input type="file" id="bgInput" accept="image/*" />
-        </div>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>MP3→動画ジェネレータ</title>
+</head>
+
+<body>
+  <div id="controls">
+    <div class="inputrow">
+      <div class="inputcol">
+        <label for="fileInput">MP3ファイル:</label>
+        <input type="file" id="fileInput" accept=".mp3" />
       </div>
-      <div class="inputrow">
-        <input type="text" id="titleInput" placeholder="Title" />
-        <input type="text" id="albumInput" placeholder="Album" />
-        <label
-          >再生速度:
-          <select id="speedSelect">
-            <option value="1">1×</option>
-            <option value="1.5">1.5×</option>
-            <option value="2">2×</option>
-            <option value="4">4×</option>
-          </select>
-        </label>
-      </div>
-      <div class="inputrow">
-        <label
-          >音量:
-          <input type="range" id="volumeInput" min="0" max="1" step="0.1" value="1" />
-        </label>
-        <button id="previewBtn" disabled>プレビュー再生</button>
-        <button id="generateBtn" disabled>動画生成</button>
+      <div class="inputcol">
+        <button id="logoSelectBtn">ロゴ画像を選択</button>
+        <button id="bgSelectBtn">背景画像を選択</button>
       </div>
     </div>
+    <div class="inputrow">
+      <input type="text" id="titleInput" placeholder="Title" />
+      <input type="text" id="albumInput" placeholder="Album" />
+      <label>再生速度:
+        <select id="speedSelect">
+          <option value="1">1×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+      </label>
+    </div>
+    <div class="inputrow">
+      <label>音量:
+        <input type="range" id="volumeInput" min="0" max="1" step="0.1" value="1" />
+      </label>
+      <button id="previewBtn" disabled>プレビュー再生</button>
+      <button id="generateBtn" disabled>動画生成</button>
+    </div>
+  </div>
 
-    <canvas id="canvas" width="640" height="360"></canvas>
-    <a id="downloadLink" style="display: none">動画をダウンロード</a>
-    <script src="main.js" type="module"></script>
-  </body>
+  <canvas id="canvas" width="640" height="360"></canvas>
+  <a id="downloadLink" style="display: none">動画をダウンロード</a>
+  <script src="main.mjs" type="module"></script>
+</body>
+
 </html>

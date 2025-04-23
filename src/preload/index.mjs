@@ -1,8 +1,13 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 
 // Custom APIs for renderer
-const api = {};
+const api = {
+  selectImage: () => ipcRenderer.invoke('select-image'),
+  saveImageBase64: (tag, filePath) => ipcRenderer.invoke('save-image-base64', tag, filePath),
+  loadImageBase64: (tag) => ipcRenderer.invoke('load-image-base64', tag),
+  ping: () => ipcRenderer.invoke('ping')
+};
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

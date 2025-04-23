@@ -1,7 +1,9 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
+import { registerHandlers } from './ipcHandlers/settingHandlers.mjs';
 import icon from '../../resources/icon.png?asset';
+import { register } from 'module';
 
 function createWindow() {
   // Create the browser window.
@@ -12,7 +14,7 @@ function createWindow() {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
     }
   });
@@ -52,6 +54,7 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'));
 
+  registerHandlers();
   createWindow();
 
   app.on('activate', function () {
