@@ -3,9 +3,8 @@ import { electronAPI } from '@electron-toolkit/preload';
 
 // Custom APIs for renderer
 const api = {
-  selectImage: () => ipcRenderer.invoke('select-image'),
-  saveImageBase64: (tag, filePath) => ipcRenderer.invoke('save-image-base64', tag, filePath),
   loadImageBase64: (tag) => ipcRenderer.invoke('load-image-base64', tag),
+  on: (event, callback) => ipcRenderer.on(event, callback),
   ping: () => ipcRenderer.invoke('ping')
 };
 

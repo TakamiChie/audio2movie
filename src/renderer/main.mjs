@@ -21,43 +21,31 @@ let mediaRecorder,
 
 const logoImg = new Image();
 logoImg.onload = () => {
-  logoLoaded = true;
   testRendering();
 };
 const bgImg = new Image();
 bgImg.onload = () => {
-  bgLoaded = true;
   testRendering();
 };
-let logoLoaded = false,
-  bgLoaded = false;
 
 let previewStart = null;
 let recordStart = null;
 const fadeDuration = 3000;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  await waitFor(() => window.api);
   await waitFor(() => window.api.loadImageBase64);
-  logoImg.src = await loadImgBase64('logo');
-  bgImg.src = await loadImgBase64('bg');
-});
-
-logoSelectBtn.addEventListener('click', async () => {
-  const result = await window.api.selectImage();
-  if (result) {
-    logoLoaded = false;
-    await window.api.saveImageBase64('logo', result);
+  await waitFor(() => window.api.on);
+  const reloadImages = async () => {
     logoImg.src = await loadImgBase64('logo');
-  }
-});
-
-bgSelectBtn.addEventListener('click', async () => {
-  const result = await window.api.selectImage();
-  if (result) {
-    bgLoaded = false;
-    await window.api.saveImageBase64('bg', result);
     bgImg.src = await loadImgBase64('bg');
-  }
+  };
+  window.api.on('requestRefreshCanvas', async () => {
+    await reloadImages();
+    testRendering();
+  });
+
+  await reloadImages();
 });
 
 fileInput.addEventListener('change', () => {
@@ -141,7 +129,7 @@ function drawFrame(analyser, dataArray, alpha) {
   const bgY = titleLines.length > 1 ? drawY + 70 : drawY + 50;
   const LSize = bgY - 30;
   let textX = 20;
-  if (bgLoaded) {
+  if (bgImg.src) {
     ctx.drawImage(
       bgImg,
       0,
@@ -154,7 +142,7 @@ function drawFrame(analyser, dataArray, alpha) {
       canvas.height - bgY
     );
   }
-  if (logoLoaded) {
+  if (logoImg.src) {
     const LX = 20,
       LY = 20;
     ctx.drawImage(logoImg, LX, LY, LSize, LSize);

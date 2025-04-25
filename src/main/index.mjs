@@ -1,9 +1,11 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron';
+import { app, shell, BrowserWindow, Menu, ipcMain } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { registerHandlers } from './ipcHandlers/settingHandlers.mjs';
 import icon from '../../resources/icon.png?asset';
 import { register } from 'module';
+
+import { createMenu } from './menu.mjs';
 
 function createWindow() {
   // Create the browser window.
@@ -11,13 +13,16 @@ function createWindow() {
     width: 900,
     height: 670,
     show: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
     }
   });
+
+  Menu.setApplicationMenu(createMenu(mainWindow));
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();
