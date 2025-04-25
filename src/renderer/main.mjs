@@ -160,6 +160,7 @@ function drawFrame(analyser, dataArray, alpha) {
     ctx.font = '24px sans-serif';
     ctx.fillText(`${albumText}`, textX, drawY + 60);
   } else {
+    ctx.font = '24px sans-serif';
     ctx.fillText(`${titleLines[0]}`, textX, drawY);
     ctx.fillText(`${albumText}`, textX, drawY + 40);
   }
