@@ -10,8 +10,6 @@ const generateBtn = document.getElementById('generateBtn');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const downloadLink = document.getElementById('downloadLink');
-const logoSelectBtn = document.getElementById('logoSelectBtn');
-const bgSelectBtn = document.getElementById('bgSelectBtn');
 
 let audioPreview, audioRecord;
 let previewCtx, previewAnalyser, previewData;
