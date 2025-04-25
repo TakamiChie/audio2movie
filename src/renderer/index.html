@@ -35,11 +35,18 @@
         <button id="stopBtn" disabled>&#x23f9;</button>
       </div>
       <button id="generateBtn" disabled>動画生成</button>
+      <label>解像度:
+        <select id="resolutionSelect">
+          <option value="640x480">480p</option>
+          <option value="1280x720">720p</option>
+          <option value="1920x1080">1080p</option>
+        </select>
+      </label>
+
     </div>
   </div>
 
-  <canvas id="canvas" width="640" height="360"></canvas>
-  <a id="downloadLink" style="display: none">動画をダウンロード</a>
+  <canvas id="canvas" width="640" height="480"></canvas>
   <script src="main.mjs" type="module"></script>
 </body>
 

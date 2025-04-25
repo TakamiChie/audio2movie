@@ -8,7 +8,6 @@ const speedSelect = document.getElementById('speedSelect');
 const generateBtn = document.getElementById('generateBtn');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const downloadLink = document.getElementById('downloadLink');
 const playBtn = document.getElementById('playBtn');
 const stopBtn = document.getElementById('stopBtn');
 const pauseBtn = document.getElementById('pauseBtn');
@@ -92,7 +91,7 @@ function testRendering() {
   testAudio.addEventListener(
     'timeupdate',
     () => {
-      drawFrame(testAnalyser, testData, 1);
+      drawFrame(ctx, testAnalyser, testData, 1);
       testAudio.pause();
       testCtx.close();
     },
@@ -122,9 +121,10 @@ function setupAudios(src) {
   audioRecord.recordStream = recDest.stream;
 }
 
-function drawFrame(analyser, dataArray, alpha) {
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+// drawFrame 関数を修正して描画先コンテキストを指定可能にする
+function drawFrame(targetCtx, analyser, dataArray, alpha) {
+  targetCtx.fillStyle = '#000';
+  targetCtx.fillRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
   const titleLines = titleInput.value.split('/');
   const albumText = albumInput.value;
   const drawY = 40;
@@ -132,7 +132,7 @@ function drawFrame(analyser, dataArray, alpha) {
   const LSize = bgY - 30;
   let textX = 20;
   if (bgImg.src) {
-    ctx.drawImage(
+    targetCtx.drawImage(
       bgImg,
       0,
       0,
@@ -140,37 +140,42 @@ function drawFrame(analyser, dataArray, alpha) {
       bgImg.height,
       0,
       bgY,
-      canvas.width,
-      canvas.height - bgY
+      targetCtx.canvas.width,
+      targetCtx.canvas.height - bgY
     );
   }
   if (logoImg.src) {
     const LX = 20,
       LY = 20;
-    ctx.drawImage(logoImg, LX, LY, LSize, LSize);
+    targetCtx.drawImage(logoImg, LX, LY, LSize, LSize);
     textX = LX + LSize + 10;
   }
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = '#fff';
+  targetCtx.globalAlpha = alpha;
+  targetCtx.fillStyle = '#fff';
   if (titleLines.length > 1) {
-    ctx.font = '24px sans-serif';
-    ctx.fillText(titleLines[0], textX, drawY);
-    ctx.font = '18px sans-serif';
-    ctx.fillText(titleLines[1], textX + 20, drawY + 25);
-    ctx.font = '24px sans-serif';
-    ctx.fillText(`${albumText}`, textX, drawY + 60);
+    targetCtx.font = '24px sans-serif';
+    targetCtx.fillText(titleLines[0], textX, drawY);
+    targetCtx.font = '18px sans-serif';
+    targetCtx.fillText(titleLines[1], textX + 20, drawY + 25);
+    targetCtx.font = '24px sans-serif';
+    targetCtx.fillText(albumText, textX, drawY + 60);
   } else {
-    ctx.font = '24px sans-serif';
-    ctx.fillText(`${titleLines[0]}`, textX, drawY);
-    ctx.fillText(`${albumText}`, textX, drawY + 40);
+    targetCtx.font = '24px sans-serif';
+    targetCtx.fillText(titleLines[0], textX, drawY);
+    targetCtx.fillText(albumText, textX, drawY + 40);
   }
-  ctx.globalAlpha = 1;
+  targetCtx.globalAlpha = 1;
   analyser.getByteFrequencyData(dataArray);
-  const barWidth = canvas.width / 2 / dataArray.length;
+  const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
   for (let i = 0; i < dataArray.length; i++) {
-    const h = (dataArray[i] / 255) * canvas.height - bgY;
-    ctx.fillStyle = 'lime';
-    ctx.fillRect(canvas.width / 2 + i * barWidth, canvas.height - h, barWidth - 1, h);
+    const h = (dataArray[i] / 255) * targetCtx.canvas.height - bgY;
+    targetCtx.fillStyle = 'lime';
+    targetCtx.fillRect(
+      targetCtx.canvas.width / 2 + i * barWidth,
+      targetCtx.canvas.height - h,
+      barWidth - 1,
+      h
+    );
   }
 }
 
@@ -179,17 +184,8 @@ function drawPreview(timestamp) {
   if (!previewStart) previewStart = timestamp;
   const elapsed = timestamp - previewStart;
   const alpha = Math.min(elapsed / fadeDuration, 1);
-  drawFrame(previewAnalyser, previewData, alpha);
+  drawFrame(ctx, previewAnalyser, previewData, alpha);
   requestAnimationFrame(drawPreview);
-}
-
-function drawRecord(timestamp) {
-  if (audioRecord.paused) return;
-  if (!recordStart) recordStart = timestamp;
-  const elapsed = timestamp - recordStart;
-  const alpha = Math.min(elapsed / fadeDuration, 1);
-  drawFrame(recordAnalyser, recordData, alpha);
-  requestAnimationFrame(drawRecord);
 }
 
 playBtn.addEventListener('click', () => {
@@ -216,11 +212,24 @@ stopBtn.addEventListener('click', () => {
   audioPreview.currentTime = 0;
 });
 
+// generateBtn のクリック時の処理で、offCanvas に高解像度で描画し、その内容をUIキャンバスに縮小コピーする
 generateBtn.addEventListener('click', () => {
   generateBtn.disabled = true;
   recordedChunks = [];
   recordStart = null;
-  const canvasStream = canvas.captureStream(30);
+
+  // resolutionSelect の値で出力解像度（offCanvas のサイズ）を設定（UI のキャンバスはそのまま）
+  const resolutionSelect = document.getElementById('resolutionSelect');
+  const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
+
+  // オフスクリーンキャンバスの生成
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = outputWidth;
+  offCanvas.height = outputHeight;
+  const offCtx = offCanvas.getContext('2d');
+
+  // offCanvas のストリームをキャプチャし、audioRecord の音声トラックと結合
+  const canvasStream = offCanvas.captureStream(30);
   const combined = new MediaStream([
     ...canvasStream.getVideoTracks(),
     ...audioRecord.recordStream.getAudioTracks()
@@ -231,10 +240,14 @@ generateBtn.addEventListener('click', () => {
   };
   mediaRecorder.onstop = () => {
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    downloadLink.href = URL.createObjectURL(blob);
-    downloadLink.download = 'output.webm';
-    downloadLink.style.display = 'inline';
-    downloadLink.textContent = '動画をダウンロード';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'output.webm';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     generateBtn.disabled = false;
   };
   audioRecord.pause();
@@ -243,6 +256,32 @@ generateBtn.addEventListener('click', () => {
   recordCtx.resume();
   mediaRecorder.start();
   audioRecord.play();
+
+  // オフスクリーンキャンバスに高解像度の描画を行い、
+  // その結果をメインキャンバスへ縮小コピーしてUIに反映する
+  function drawRecord(timestamp) {
+    if (audioRecord.paused) return;
+    if (!recordStart) recordStart = timestamp;
+    const elapsed = timestamp - recordStart;
+    const alpha = Math.min(elapsed / fadeDuration, 1);
+    // offCanvas を描画対象とすることで高解像度で描画
+    drawFrame(offCtx, recordAnalyser, recordData, alpha);
+    // offCanvas の内容をメインキャンバスに縮小描画
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(
+      offCanvas,
+      0,
+      0,
+      offCanvas.width,
+      offCanvas.height,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+    requestAnimationFrame(drawRecord);
+  }
+
   requestAnimationFrame(drawRecord);
   audioRecord.onended = () => {
     mediaRecorder.stop();
