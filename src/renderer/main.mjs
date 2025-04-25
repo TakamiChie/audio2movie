@@ -5,11 +5,13 @@ const fileInput = document.getElementById('fileInput');
 const titleInput = document.getElementById('titleInput');
 const albumInput = document.getElementById('albumInput');
 const speedSelect = document.getElementById('speedSelect');
-const previewBtn = document.getElementById('previewBtn');
 const generateBtn = document.getElementById('generateBtn');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const downloadLink = document.getElementById('downloadLink');
+const playBtn = document.getElementById('playBtn');
+const stopBtn = document.getElementById('stopBtn');
+const pauseBtn = document.getElementById('pauseBtn');
 
 let audioPreview, audioRecord;
 let previewCtx, previewAnalyser, previewData;
@@ -54,7 +56,9 @@ fileInput.addEventListener('change', () => {
       titleInput.value = tags.title || '';
       albumInput.value = tags.album || '';
       setupAudios(URL.createObjectURL(file));
-      previewBtn.disabled = false;
+      playBtn.disabled = false;
+      pauseBtn.disabled = false;
+      stopBtn.disabled = false;
       generateBtn.disabled = false;
       testRendering();
     },
@@ -187,7 +191,7 @@ function drawRecord(timestamp) {
   requestAnimationFrame(drawRecord);
 }
 
-previewBtn.addEventListener('click', () => {
+playBtn.addEventListener('click', () => {
   previewStart = null;
   audioPreview.pause();
   audioPreview.currentTime = 0;
@@ -195,6 +199,20 @@ previewBtn.addEventListener('click', () => {
   previewCtx.resume();
   audioPreview.play();
   requestAnimationFrame(drawPreview);
+});
+
+pauseBtn.addEventListener('click', () => {
+  if (audioPreview.paused) {
+    audioPreview.play();
+    requestAnimationFrame(drawPreview);
+  } else {
+    audioPreview.pause();
+  }
+});
+
+stopBtn.addEventListener('click', () => {
+  audioPreview.pause();
+  audioPreview.currentTime = 0;
 });
 
 generateBtn.addEventListener('click', () => {
