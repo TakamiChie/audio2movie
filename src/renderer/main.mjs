@@ -123,14 +123,19 @@ function setupAudios(src) {
 
 // drawFrame 関数を修正して描画先コンテキストを指定可能にする
 function drawFrame(targetCtx, analyser, dataArray, alpha) {
+  // UI キャンバス(canvas)と描画対象キャンバス(targetCtx.canvas)の比率をスケールファクターとする
+  const scale = targetCtx.canvas.width / canvas.width;
+
   targetCtx.fillStyle = '#000';
   targetCtx.fillRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
+
   const titleLines = titleInput.value.split('/');
   const albumText = albumInput.value;
-  const drawY = 40;
-  const bgY = titleLines.length > 1 ? drawY + 70 : drawY + 50;
-  const LSize = bgY - 30;
-  let textX = 20;
+  const drawY = 40 * scale;
+  const bgY = titleLines.length > 1 ? drawY + 70 * scale : drawY + 50 * scale;
+  const LSize = bgY - 30 * scale;
+  let textX = 20 * scale;
+
   if (bgImg.src) {
     targetCtx.drawImage(
       bgImg,
@@ -145,26 +150,29 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
     );
   }
   if (logoImg.src) {
-    const LX = 20,
-      LY = 20;
+    const LX = 20 * scale,
+      LY = 20 * scale;
     targetCtx.drawImage(logoImg, LX, LY, LSize, LSize);
-    textX = LX + LSize + 10;
+    textX = LX + LSize + 10 * scale;
   }
+
   targetCtx.globalAlpha = alpha;
   targetCtx.fillStyle = '#fff';
+  // テキストサイズをスケールに合わせて変更
   if (titleLines.length > 1) {
-    targetCtx.font = '24px sans-serif';
+    targetCtx.font = `${24 * scale}px sans-serif`;
     targetCtx.fillText(titleLines[0], textX, drawY);
-    targetCtx.font = '18px sans-serif';
-    targetCtx.fillText(titleLines[1], textX + 20, drawY + 25);
-    targetCtx.font = '24px sans-serif';
-    targetCtx.fillText(albumText, textX, drawY + 60);
+    targetCtx.font = `${18 * scale}px sans-serif`;
+    targetCtx.fillText(titleLines[1], textX + 20 * scale, drawY + 25 * scale);
+    targetCtx.font = `${24 * scale}px sans-serif`;
+    targetCtx.fillText(albumText, textX, drawY + 60 * scale);
   } else {
-    targetCtx.font = '24px sans-serif';
+    targetCtx.font = `${24 * scale}px sans-serif`;
     targetCtx.fillText(titleLines[0], textX, drawY);
-    targetCtx.fillText(albumText, textX, drawY + 40);
+    targetCtx.fillText(albumText, textX, drawY + 40 * scale);
   }
   targetCtx.globalAlpha = 1;
+
   analyser.getByteFrequencyData(dataArray);
   const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
   for (let i = 0; i < dataArray.length; i++) {
