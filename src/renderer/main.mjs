@@ -88,6 +88,16 @@ async function loadImgBase64(tag) {
 function testRendering() {
   if (!audioPreview) return;
 
+  // resolutionSelect の値で出力解像度（offCanvas のサイズ）を設定（UI のキャンバスはそのまま）
+  const resolutionSelect = document.getElementById('resolutionSelect');
+  const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
+
+  // オフスクリーンキャンバスの生成
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = outputWidth;
+  offCanvas.height = outputHeight;
+  const offCtx = offCanvas.getContext('2d');
+
   const testAudio = new Audio(audioPreview.src);
   const testCtx = new (window.AudioContext || window.webkitAudioContext)();
   const testSrc = testCtx.createMediaElementSource(testAudio);
@@ -101,7 +111,19 @@ function testRendering() {
   testAudio.addEventListener(
     'timeupdate',
     () => {
-      drawFrame(ctx, testAnalyser, testData, 1);
+      drawFrame(offCtx, testAnalyser, testData, 1);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        offCanvas,
+        0,
+        0,
+        offCanvas.width,
+        offCanvas.height,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
       testAudio.pause();
       testCtx.close();
     },
