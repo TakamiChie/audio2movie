@@ -52,7 +52,7 @@ fileInput.addEventListener('change', () => {
     onSuccess: ({ tags }) => {
       const titleInput = document.getElementById('titleInput');
       const albumInput = document.getElementById('albumInput');
-      
+
       titleInput.value = tags.title || '';
       albumInput.value = tags.album || '';
       setupAudios(URL.createObjectURL(file));
