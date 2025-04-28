@@ -2,8 +2,6 @@ import jsmediatags from 'jsmediatags/dist/jsmediatags.min.js';
 import { waitFor } from './util.mjs';
 
 const fileInput = document.getElementById('fileInput');
-const titleInput = document.getElementById('titleInput');
-const albumInput = document.getElementById('albumInput');
 const speedSelect = document.getElementById('speedSelect');
 const generateBtn = document.getElementById('generateBtn');
 const canvas = document.getElementById('canvas');
@@ -52,6 +50,9 @@ fileInput.addEventListener('change', () => {
   if (!file) return;
   jsmediatags.read(file, {
     onSuccess: ({ tags }) => {
+      const titleInput = document.getElementById('titleInput');
+      const albumInput = document.getElementById('albumInput');
+      
       titleInput.value = tags.title || '';
       albumInput.value = tags.album || '';
       setupAudios(URL.createObjectURL(file));
@@ -65,8 +66,17 @@ fileInput.addEventListener('change', () => {
   });
 });
 
-titleInput.addEventListener('input', testRendering);
-albumInput.addEventListener('input', testRendering);
+Array.from(document.getElementsByClassName('updateRendering')).forEach((e) => {
+  console.log(e.nodeName);
+  switch (e.nodeName) {
+    case 'SELECT':
+      e.addEventListener('change', testRendering);
+      break;
+    case 'INPUT':
+      e.addEventListener('input', testRendering);
+      break;
+  }
+});
 
 async function loadImgBase64(tag) {
   const { base64, mime } = await window.api.loadImageBase64(tag);
@@ -123,6 +133,8 @@ function setupAudios(src) {
 
 // drawFrame 関数を修正して描画先コンテキストを指定可能にする
 function drawFrame(targetCtx, analyser, dataArray, alpha) {
+  const titleInput = document.getElementById('titleInput');
+  const albumInput = document.getElementById('albumInput');
   // UI キャンバス(canvas)と描画対象キャンバス(targetCtx.canvas)の比率をスケールファクターとする
   const scale = targetCtx.canvas.width / canvas.width;
 

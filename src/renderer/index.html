@@ -14,8 +14,8 @@
       <input type="file" id="fileInput" accept=".mp3" />
     </div>
     <div class="inputrow">
-      <input type="text" id="titleInput" placeholder="Title" />
-      <input type="text" id="albumInput" placeholder="Album" />
+      <input type="text" id="titleInput" placeholder="Title" class="updateRendering" />
+      <input type="text" id="albumInput" placeholder="Album" class="updateRendering" />
       <label>再生速度:
         <select id="speedSelect">
           <option value="1">1×</option>
@@ -36,7 +36,7 @@
       </div>
       <button id="generateBtn" disabled>動画生成</button>
       <label>解像度:
-        <select id="resolutionSelect">
+        <select id="resolutionSelect" class="updateRendering">
           <option value="640x480">480p</option>
           <option value="1280x720">720p</option>
           <option value="1920x1080">1080p</option>
