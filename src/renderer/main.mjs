@@ -67,7 +67,6 @@ fileInput.addEventListener('change', () => {
 });
 
 Array.from(document.getElementsByClassName('updateRendering')).forEach((e) => {
-  console.log(e.nodeName);
   switch (e.nodeName) {
     case 'SELECT':
       e.addEventListener('change', testRendering);
