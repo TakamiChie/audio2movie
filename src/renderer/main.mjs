@@ -259,6 +259,7 @@ generateBtn.addEventListener('click', () => {
   recordedChunks = [];
   recordStart = null;
 
+  statusTextUpdate('動画作成準備中');
   // resolutionSelect の値で出力解像度（offCanvas のサイズ）を設定（UI のキャンバスはそのまま）
   const resolutionSelect = document.getElementById('resolutionSelect');
   const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
@@ -295,6 +296,7 @@ generateBtn.addEventListener('click', () => {
   audioRecord.currentTime = 0;
   audioRecord.playbackRate = 1;
   recordCtx.resume();
+  statusTextUpdate('動画作成開始');
   mediaRecorder.start();
   audioRecord.play();
 
@@ -305,6 +307,15 @@ generateBtn.addEventListener('click', () => {
     if (!recordStart) recordStart = timestamp;
     const elapsed = timestamp - recordStart;
     const alpha = Math.min(elapsed / fadeDuration, 1);
+    const progress = audioRecord.currentTime / audioRecord.duration;
+    const currentMinutes = Math.floor(audioRecord.currentTime / 60);
+    const currentSeconds = Math.floor(audioRecord.currentTime % 60);
+    const totalMinutes = Math.floor(audioRecord.duration / 60);
+    const totalSeconds = Math.floor(audioRecord.duration % 60);
+    const formattedCurrentTime = `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')}`;
+    const formattedTotalTime = `${totalMinutes.toString().padStart(2, '0')}:${totalSeconds.toString().padStart(2, '0')}`;
+    progressUpdate(progress, `${formattedCurrentTime}/${formattedTotalTime}`);
+
     // offCanvas を描画対象とすることで高解像度で描画
     drawFrame(offCtx, recordAnalyser, recordData, alpha);
     // offCanvas の内容をメインキャンバスに縮小描画
@@ -328,5 +339,17 @@ generateBtn.addEventListener('click', () => {
     mediaRecorder.stop();
     previewCtx.close();
     recordCtx.close();
+    statusTextUpdate('動画作成完了');
+    progressUpdate(1, '');
   };
 });
+
+function statusTextUpdate(text) {
+  document.getElementById('statusText').innerText = text;
+}
+
+function progressUpdate(percentage, text) {
+  const progressBar = document.getElementById('progressBarInner');
+  progressBar.style.width = `${percentage * 100}%`;
+  progressBar.innerText = text;
+}

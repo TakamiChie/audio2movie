@@ -30,3 +30,43 @@ button {
 .inputcol {
   flex: 1;
 }
+
+#statusBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 24px;
+  background-color: #e0e0e0;
+  border-top: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+#statusText {
+  flex: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#progressBar {
+  flex: 1;
+  min-width: 100px;
+  height: 16px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  position: relative;
+  overflow: hidden;
+}
+
+#progressBarInner {
+  height: 100%;
+  width: 0%;
+  font-size: 11px;
+  text-indent: 10px;
+  background-color: #4caf50;
+  transition: width 0.4s ease;
+}
