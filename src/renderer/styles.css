@@ -1,10 +1,75 @@
 body {
   font-family: sans-serif;
-  padding: 20px;
 }
 
 #controls {
   margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 各コントロールパネルの共通スタイル */
+.control-panel {
+  padding: 4px 16px;
+  padding-left: 40px;
+  background: #f9f9f9;
+  position: relative;
+  border-radius: 0 5px 5px 0;
+}
+
+.control-panel::before {
+  content: attr(data-label);
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: #999;
+  padding: 8px 4px;
+  border-radius: 5px 0 0 5px;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+  height: calc(100% - 8px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#fileInputPanel {
+  background: linear-gradient(90deg, #e0f2f7, #fff);
+}
+
+#playbackPanel {
+  background: linear-gradient(90deg, #fffde7, #fff);
+}
+
+#generationPanel {
+  background: linear-gradient(90deg, #e8f5e9, #fff);
+}
+
+/* 各パネルの最後の inputrow の下のマージンを削除 */
+.control-panel .inputrow:last-child {
+  margin-bottom: 0;
+}
+
+.inputrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.inputcol {
+  flex: 1;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 #canvas {
@@ -18,17 +83,6 @@ input,
 select,
 button {
   margin-right: 8px;
-}
-
-.inputrow {
-  display: flex;
-  gap: 8px;
-  margin: 8px 0;
-  transition: all 0.2s ease;
-}
-
-.inputcol {
-  flex: 1;
 }
 
 #statusBar {
