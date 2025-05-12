@@ -101,9 +101,30 @@ function testRendering() {
   offCanvas.width = outputWidth;
   offCanvas.height = outputHeight;
   const offCtx = offCanvas.getContext('2d');
-  // オーディオ関連の処理を削除し、静的な描画のみ行う
-  // drawFrame に analyser と dataArray として null を渡し、alpha は 1 (不透明) とする
-  drawFrame(offCtx, null, null, 1);
+
+  // testRendering時にはダミーのオーディオデータを生成してビジュアライザを描画する
+  let dummyDataArrayForTest;
+  // previewAnalyserが初期化されていればその設定を使い、そうでなければデフォルト値を使用
+  const dataLength = previewAnalyser ? previewAnalyser.frequencyBinCount : 128; // fftSize 256 の場合のデフォルト
+  dummyDataArrayForTest = new Uint8Array(dataLength);
+  const peakHeight = 240; // ビジュアライザの山の高さの最大値 (0-255の範囲で)
+  const minHeight = 80; // ビジュアライザの山の高さの最小値 (0-255の範囲で)
+  const midPoint = dataLength / 2;
+  // peakHeight は minHeight 以上であることを保証 (またはエラー処理)
+  const actualPeakHeight = Math.max(minHeight, peakHeight);
+  const visualRange = actualPeakHeight - minHeight;
+
+  for (let i = 0; i < dataLength; i++) {
+    // minHeight から actualPeakHeight の範囲で山なりの形状を生成
+    let baseVal =
+      i <= midPoint ? (i / midPoint) * visualRange : ((dataLength - i) / midPoint) * visualRange;
+    baseVal += minHeight; // 最小値を加算して底上げ
+    // 少しランダムな揺らぎを追加して単調さを減らす
+    const finalVal = baseVal + (Math.random() - 0.5) * 40; // -20 から +20 の範囲で揺らぎ
+    dummyDataArrayForTest[i] = Math.max(0, Math.min(255, Math.floor(finalVal))); // 0-255の範囲に収める
+  }
+
+  drawFrame(offCtx, null, dummyDataArrayForTest, 1);
 
   // オフスクリーンキャンバスの内容をメインキャンバスに描画
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -195,9 +216,13 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
   }
   targetCtx.globalAlpha = 1;
 
-  // analyser と dataArray が提供されている場合のみオーディオビジュアライザを描画
-  if (analyser && dataArray) {
-    analyser.getByteFrequencyData(dataArray);
+  // dataArray が提供されていればオーディオビジュアライザを描画
+  if (dataArray) {
+    // analyser が提供されていれば、dataArray を更新
+    if (analyser) {
+      analyser.getByteFrequencyData(dataArray);
+    }
+    // dataArray を使用してビジュアライザを描画
     const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
     for (let i = 0; i < dataArray.length; i++) {
       // バーの高さは、利用可能な描画領域 (canvasの高さ - bgY) を基準に計算する
