@@ -142,7 +142,6 @@ function setupAudios(src) {
   audioRecord.recordStream = recDest.stream;
 }
 
-// drawFrame 関数を修正して描画先コンテキストを指定可能にする
 function drawFrame(targetCtx, analyser, dataArray, alpha) {
   const titleInput = document.getElementById('titleInput');
   const albumInput = document.getElementById('albumInput');
