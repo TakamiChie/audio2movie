@@ -13,11 +13,11 @@ const schemes = [
   },
   {
     name: 'グラデーションR->Y->B',
-    colors: ['red', 'yellow', 'blue']
+    colors: ['red', '#FFBE31', 'blue']
   },
   {
     name: 'レインボー',
-    colors: ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple']
+    colors: ['red', 'orange', 'yellow', 'green', '#00DDDD', 'blue', 'purple']
   }
 ];
 
