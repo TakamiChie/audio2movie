@@ -92,8 +92,6 @@ async function loadImgBase64(tag) {
 }
 
 function testRendering() {
-  if (!audioPreview) return;
-
   // resolutionSelect の値で出力解像度（offCanvas のサイズ）を設定（UI のキャンバスはそのまま）
   const resolutionSelect = document.getElementById('resolutionSelect');
   const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
@@ -103,37 +101,22 @@ function testRendering() {
   offCanvas.width = outputWidth;
   offCanvas.height = outputHeight;
   const offCtx = offCanvas.getContext('2d');
+  // オーディオ関連の処理を削除し、静的な描画のみ行う
+  // drawFrame に analyser と dataArray として null を渡し、alpha は 1 (不透明) とする
+  drawFrame(offCtx, null, null, 1);
 
-  const testAudio = new Audio(audioPreview.src);
-  const testCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const testSrc = testCtx.createMediaElementSource(testAudio);
-  const testAnalyser = testCtx.createAnalyser();
-  testAnalyser.fftSize = 256;
-  const testData = new Uint8Array(testAnalyser.frequencyBinCount);
-  testSrc.connect(testAnalyser);
-  testAnalyser.connect(testCtx.destination);
-  testAudio.currentTime = 10;
-  testAudio.play();
-  testAudio.addEventListener(
-    'timeupdate',
-    () => {
-      drawFrame(offCtx, testAnalyser, testData, 1);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(
-        offCanvas,
-        0,
-        0,
-        offCanvas.width,
-        offCanvas.height,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-      testAudio.pause();
-      testCtx.close();
-    },
-    { once: true }
+  // オフスクリーンキャンバスの内容をメインキャンバスに描画
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+    offCanvas,
+    0,
+    0,
+    offCanvas.width,
+    offCanvas.height,
+    0,
+    0,
+    canvas.width,
+    canvas.height
   );
 }
 
@@ -213,17 +196,21 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
   }
   targetCtx.globalAlpha = 1;
 
-  analyser.getByteFrequencyData(dataArray);
-  const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
-  for (let i = 0; i < dataArray.length; i++) {
-    const h = (dataArray[i] / 255) * targetCtx.canvas.height - bgY;
-    targetCtx.fillStyle = 'lime';
-    targetCtx.fillRect(
-      targetCtx.canvas.width / 2 + i * barWidth,
-      targetCtx.canvas.height - h,
-      barWidth - 1,
-      h
-    );
+  // analyser と dataArray が提供されている場合のみオーディオビジュアライザを描画
+  if (analyser && dataArray) {
+    analyser.getByteFrequencyData(dataArray);
+    const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
+    for (let i = 0; i < dataArray.length; i++) {
+      // バーの高さは、利用可能な描画領域 (canvasの高さ - bgY) を基準に計算する
+      const h = (dataArray[i] / 255) * (targetCtx.canvas.height - bgY);
+      targetCtx.fillStyle = 'lime'; // TODO: 将来的には選択されたカラースキームを反映
+      targetCtx.fillRect(
+        targetCtx.canvas.width / 2 + i * barWidth, // 画面右半分に描画
+        targetCtx.canvas.height - h, // 下から上にバーが伸びる
+        barWidth - 1, // バーの幅 (隙間を考慮)
+        h
+      );
+    }
   }
 }
 
