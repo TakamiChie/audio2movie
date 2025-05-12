@@ -167,6 +167,19 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
   const titleInput = document.getElementById('titleInput');
   const albumInput = document.getElementById('albumInput');
   // UI キャンバス(canvas)と描画対象キャンバス(targetCtx.canvas)の比率をスケールファクターとする
+  const colorSchemeSelector = document.getElementById('colorSchemeSelector');
+  let visualizerColors = ['lime']; // デフォルトの色
+  if (colorSchemeSelector && colorSchemeSelector.value) {
+    try {
+      const parsedColors = JSON.parse(colorSchemeSelector.value);
+      if (Array.isArray(parsedColors) && parsedColors.length > 0) {
+        visualizerColors = parsedColors;
+      }
+    } catch (e) {
+      console.error('Failed to parse color scheme:', e);
+      // パースに失敗した場合はデフォルトの色を使用
+    }
+  }
   const scale = targetCtx.canvas.width / canvas.width;
 
   targetCtx.fillStyle = '#000';
@@ -227,7 +240,8 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
     for (let i = 0; i < dataArray.length; i++) {
       // バーの高さは、利用可能な描画領域 (canvasの高さ - bgY) を基準に計算する
       const h = (dataArray[i] / 255) * (targetCtx.canvas.height - bgY);
-      targetCtx.fillStyle = 'lime'; // TODO: 将来的には選択されたカラースキームを反映
+      // 配列の最初の色を使用。将来的にはインデックスを i % visualizerColors.length などで変更可能
+      targetCtx.fillStyle = visualizerColors[0];
       targetCtx.fillRect(
         targetCtx.canvas.width / 2 + i * barWidth, // 画面右半分に描画
         targetCtx.canvas.height - h, // 下から上にバーが伸びる
