@@ -237,11 +237,29 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
     }
     // dataArray を使用してビジュアライザを描画
     const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
+
+    // ビジュアライザのバーの色を設定
+    if (visualizerColors.length > 1) {
+      // 複数の色が指定されている場合、グラデーションを作成
+      const gradientStartX = targetCtx.canvas.width / 2; // ビジュアライザ描画領域の左端
+      const gradientEndX = targetCtx.canvas.width; // ビジュアライザ描画領域の右端
+      const gradient = targetCtx.createLinearGradient(gradientStartX, 0, gradientEndX, 0);
+
+      visualizerColors.forEach((color, index) => {
+        // N色の場合は、0, 1/(N-1), 2/(N-1), ..., 1 の位置に色を配置
+        const offset = index / (visualizerColors.length - 1);
+        gradient.addColorStop(offset, color);
+      });
+      targetCtx.fillStyle = gradient;
+    } else {
+      // 色が1つの場合 (visualizerColors[0] は 'lime' またはパースされた単一色)
+      targetCtx.fillStyle = visualizerColors[0];
+    }
+
     for (let i = 0; i < dataArray.length; i++) {
       // バーの高さは、利用可能な描画領域 (canvasの高さ - bgY) を基準に計算する
       const h = (dataArray[i] / 255) * (targetCtx.canvas.height - bgY);
-      // 配列の最初の色を使用。将来的にはインデックスを i % visualizerColors.length などで変更可能
-      targetCtx.fillStyle = visualizerColors[0];
+      // fillStyle はループの前に設定済み (単色またはグラデーション)
       targetCtx.fillRect(
         targetCtx.canvas.width / 2 + i * barWidth, // 画面右半分に描画
         targetCtx.canvas.height - h, // 下から上にバーが伸びる
