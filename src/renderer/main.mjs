@@ -41,7 +41,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     await reloadImages();
     testRendering();
   });
-
+  const colorSchemeSelector = document.getElementById('colorSchemeSelector');
+  const colorSchemes = await window.api.getColorSchemes();
+  colorSchemes.forEach((scheme) => {
+    const option = document.createElement('option');
+    option.value = JSON.stringify(scheme.colors);
+    option.text = scheme.name;
+    colorSchemeSelector.add(option);
+  });
   await reloadImages();
 });
 

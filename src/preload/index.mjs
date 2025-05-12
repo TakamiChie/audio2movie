@@ -4,6 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload';
 // Custom APIs for renderer
 const api = {
   loadImageBase64: (tag) => ipcRenderer.invoke('load-image-base64', tag),
+  getColorSchemes: () => ipcRenderer.invoke('get-color-schemes'),
   on: (event, callback) => ipcRenderer.on(event, callback),
   ping: () => ipcRenderer.invoke('ping')
 };
