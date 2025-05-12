@@ -41,7 +41,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     await reloadImages();
     testRendering();
   });
-
+  const colorSchemeSelector = document.getElementById('colorSchemeSelector');
+  const colorSchemes = await window.api.getColorSchemes();
+  colorSchemes.forEach((scheme) => {
+    const option = document.createElement('option');
+    option.value = JSON.stringify(scheme.colors);
+    option.text = scheme.name;
+    colorSchemeSelector.add(option);
+  });
   await reloadImages();
 });
 
@@ -85,8 +92,6 @@ async function loadImgBase64(tag) {
 }
 
 function testRendering() {
-  if (!audioPreview) return;
-
   // resolutionSelect の値で出力解像度（offCanvas のサイズ）を設定（UI のキャンバスはそのまま）
   const resolutionSelect = document.getElementById('resolutionSelect');
   const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
@@ -97,36 +102,42 @@ function testRendering() {
   offCanvas.height = outputHeight;
   const offCtx = offCanvas.getContext('2d');
 
-  const testAudio = new Audio(audioPreview.src);
-  const testCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const testSrc = testCtx.createMediaElementSource(testAudio);
-  const testAnalyser = testCtx.createAnalyser();
-  testAnalyser.fftSize = 256;
-  const testData = new Uint8Array(testAnalyser.frequencyBinCount);
-  testSrc.connect(testAnalyser);
-  testAnalyser.connect(testCtx.destination);
-  testAudio.currentTime = 10;
-  testAudio.play();
-  testAudio.addEventListener(
-    'timeupdate',
-    () => {
-      drawFrame(offCtx, testAnalyser, testData, 1);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(
-        offCanvas,
-        0,
-        0,
-        offCanvas.width,
-        offCanvas.height,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-      testAudio.pause();
-      testCtx.close();
-    },
-    { once: true }
+  // testRendering時にはダミーのオーディオデータを生成してビジュアライザを描画する
+  let dummyDataArrayForTest;
+  // previewAnalyserが初期化されていればその設定を使い、そうでなければデフォルト値を使用
+  const dataLength = previewAnalyser ? previewAnalyser.frequencyBinCount : 128; // fftSize 256 の場合のデフォルト
+  dummyDataArrayForTest = new Uint8Array(dataLength);
+  const peakHeight = 240; // ビジュアライザの山の高さの最大値 (0-255の範囲で)
+  const minHeight = 80; // ビジュアライザの山の高さの最小値 (0-255の範囲で)
+  const midPoint = dataLength / 2;
+  // peakHeight は minHeight 以上であることを保証 (またはエラー処理)
+  const actualPeakHeight = Math.max(minHeight, peakHeight);
+  const visualRange = actualPeakHeight - minHeight;
+
+  for (let i = 0; i < dataLength; i++) {
+    // minHeight から actualPeakHeight の範囲で山なりの形状を生成
+    let baseVal =
+      i <= midPoint ? (i / midPoint) * visualRange : ((dataLength - i) / midPoint) * visualRange;
+    baseVal += minHeight; // 最小値を加算して底上げ
+    // 少しランダムな揺らぎを追加して単調さを減らす
+    const finalVal = baseVal + (Math.random() - 0.5) * 40; // -20 から +20 の範囲で揺らぎ
+    dummyDataArrayForTest[i] = Math.max(0, Math.min(255, Math.floor(finalVal))); // 0-255の範囲に収める
+  }
+
+  drawFrame(offCtx, null, dummyDataArrayForTest, 1);
+
+  // オフスクリーンキャンバスの内容をメインキャンバスに描画
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+    offCanvas,
+    0,
+    0,
+    offCanvas.width,
+    offCanvas.height,
+    0,
+    0,
+    canvas.width,
+    canvas.height
   );
 }
 
@@ -152,11 +163,23 @@ function setupAudios(src) {
   audioRecord.recordStream = recDest.stream;
 }
 
-// drawFrame 関数を修正して描画先コンテキストを指定可能にする
 function drawFrame(targetCtx, analyser, dataArray, alpha) {
   const titleInput = document.getElementById('titleInput');
   const albumInput = document.getElementById('albumInput');
   // UI キャンバス(canvas)と描画対象キャンバス(targetCtx.canvas)の比率をスケールファクターとする
+  const colorSchemeSelector = document.getElementById('colorSchemeSelector');
+  let visualizerColors = ['lime']; // デフォルトの色
+  if (colorSchemeSelector && colorSchemeSelector.value) {
+    try {
+      const parsedColors = JSON.parse(colorSchemeSelector.value);
+      if (Array.isArray(parsedColors) && parsedColors.length > 0) {
+        visualizerColors = parsedColors;
+      }
+    } catch (e) {
+      console.error('Failed to parse color scheme:', e);
+      // パースに失敗した場合はデフォルトの色を使用
+    }
+  }
   const scale = targetCtx.canvas.width / canvas.width;
 
   targetCtx.fillStyle = '#000';
@@ -206,17 +229,44 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
   }
   targetCtx.globalAlpha = 1;
 
-  analyser.getByteFrequencyData(dataArray);
-  const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
-  for (let i = 0; i < dataArray.length; i++) {
-    const h = (dataArray[i] / 255) * targetCtx.canvas.height - bgY;
-    targetCtx.fillStyle = 'lime';
-    targetCtx.fillRect(
-      targetCtx.canvas.width / 2 + i * barWidth,
-      targetCtx.canvas.height - h,
-      barWidth - 1,
-      h
-    );
+  // dataArray が提供されていればオーディオビジュアライザを描画
+  if (dataArray) {
+    // analyser が提供されていれば、dataArray を更新
+    if (analyser) {
+      analyser.getByteFrequencyData(dataArray);
+    }
+    // dataArray を使用してビジュアライザを描画
+    const barWidth = targetCtx.canvas.width / 2 / dataArray.length;
+
+    // ビジュアライザのバーの色を設定
+    if (visualizerColors.length > 1) {
+      // 複数の色が指定されている場合、グラデーションを作成
+      const gradientStartX = targetCtx.canvas.width / 2; // ビジュアライザ描画領域の左端
+      const gradientEndX = targetCtx.canvas.width; // ビジュアライザ描画領域の右端
+      const gradient = targetCtx.createLinearGradient(gradientStartX, 0, gradientEndX, 0);
+
+      visualizerColors.forEach((color, index) => {
+        // N色の場合は、0, 1/(N-1), 2/(N-1), ..., 1 の位置に色を配置
+        const offset = index / (visualizerColors.length - 1);
+        gradient.addColorStop(offset, color);
+      });
+      targetCtx.fillStyle = gradient;
+    } else {
+      // 色が1つの場合 (visualizerColors[0] は 'lime' またはパースされた単一色)
+      targetCtx.fillStyle = visualizerColors[0];
+    }
+
+    for (let i = 0; i < dataArray.length; i++) {
+      // バーの高さは、利用可能な描画領域 (canvasの高さ - bgY) を基準に計算する
+      const h = (dataArray[i] / 255) * (targetCtx.canvas.height - bgY);
+      // fillStyle はループの前に設定済み (単色またはグラデーション)
+      targetCtx.fillRect(
+        targetCtx.canvas.width / 2 + i * barWidth, // 画面右半分に描画
+        targetCtx.canvas.height - h, // 下から上にバーが伸びる
+        barWidth - 1, // バーの幅 (隙間を考慮)
+        h
+      );
+    }
   }
 }
 
