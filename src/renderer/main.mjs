@@ -16,6 +16,13 @@ let recordCtx, recordAnalyser, recordData;
 let mediaRecorder,
   recordedChunks = [];
 
+// --- Added for interruptible generation ---
+let isGeneratingVideo = false;
+let recordAnimationId = null;
+const GENERATE_BUTTON_TEXT_DEFAULT = '動画生成';
+const GENERATE_BUTTON_TEXT_INTERRUPT = '中断';
+// --- End Added ---
+
 const logoImg = new Image();
 logoImg.onload = () => {
   testRendering();
@@ -303,14 +310,110 @@ stopBtn.addEventListener('click', () => {
   audioPreview.currentTime = 0;
 });
 
-// generateBtn のクリック時の処理で、offCanvas に高解像度で描画し、その内容をUIキャンバスに縮小コピーする
-generateBtn.addEventListener('click', () => {
-  generateBtn.disabled = true;
-  recordedChunks = [];
-  recordStart = null;
+// Function to handle the actual stop/cleanup of video generation
+function finalizeVideoGeneration(isInterrupted) {
+  if (recordAnimationId) {
+    cancelAnimationFrame(recordAnimationId);
+    recordAnimationId = null;
+  }
 
-  statusTextUpdate('動画作成準備中');
-  // resolutionSelect の値で出力解像度（offCanvas のサイズ）を設定（UI のキャンバスはそのまま）
+  if (audioRecord && !audioRecord.paused) {
+    audioRecord.pause();
+    // audioRecord.currentTime = 0; // Optional: reset audio position if desired on interrupt
+  }
+
+  if (isInterrupted) {
+    statusTextUpdate('動画生成が中断されました');
+    progressUpdate(0, '');
+  } else {
+    // This case is for successful completion
+    if (recordedChunks && recordedChunks.length > 0) {
+      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'output.webm';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      statusTextUpdate('動画作成完了');
+    } else if (!mediaRecorder?.wasInterrupted) { // Check wasInterrupted to avoid "no data" message on interrupt
+        statusTextUpdate('動画作成完了 (データなし)');
+    }
+  }
+
+  recordedChunks = [];
+  isGeneratingVideo = false;
+  if (generateBtn) {
+    generateBtn.textContent = GENERATE_BUTTON_TEXT_DEFAULT;
+    generateBtn.disabled = !fileInput.files[0] && !(audioRecord && audioRecord.src); // Disable if no file
+  }
+  if (mediaRecorder) {
+    mediaRecorder.ondataavailable = null;
+    mediaRecorder.onstop = null;
+  }
+  mediaRecorder = null;
+}
+
+generateBtn.addEventListener('click', async () => {
+  if (isGeneratingVideo) {
+    // ---- Interrupt Action ----
+    statusTextUpdate('動画生成を中断しています...');
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.wasInterrupted = true; // Set flag for onstop
+      mediaRecorder.stop(); // This will trigger onstop, which calls finalizeVideoGeneration
+    } else {
+      // If mediaRecorder isn't active or audio failed to play, directly finalize.
+      finalizeVideoGeneration(true);
+    }
+  } else {
+    // ---- Start Generation Action ----
+    if (!fileInput.files[0] && !(audioRecord && audioRecord.src)) {
+        alert('オーディオファイルを選択してください。');
+        return;
+    }
+
+    // Ensure audio contexts are ready.
+    // If contexts were closed by a previous successful generation, re-initialize them.
+    if (!recordCtx || recordCtx.state === 'closed' || !previewCtx || previewCtx.state === 'closed') {
+      console.log("Audio context(s) are closed or not initialized. Re-initializing audio setup.");
+      let srcForSetup;
+      if (audioRecord && audioRecord.src) { // Use existing ObjectURL if available (e.g., from a previous load)
+        srcForSetup = audioRecord.src;
+      } else if (fileInput.files[0]) { // Or create a new one from the file input
+        srcForSetup = URL.createObjectURL(fileInput.files[0]);
+      } else {
+        alert('音声ソースが見つかりません。ファイルを再選択してください。');
+        finalizeVideoGeneration(true); // Abort
+        return;
+      }
+      // It's important that setupAudios can handle being called multiple times
+      // and correctly re-initializes or reuses existing audio elements if appropriate.
+      // Assuming setupAudios re-creates AudioContexts and related nodes.
+      setupAudios(srcForSetup);
+      if (!recordCtx || recordCtx.state === 'closed') { // Check again after setup
+        alert('録音用音声コンテキストの初期化に失敗しました。');
+        finalizeVideoGeneration(true); // Abort
+        return;
+      }
+      if (!previewCtx || previewCtx.state === 'closed') { // Check again after setup
+        alert('プレビュー用音声コンテキストの初期化に失敗しました。');
+        // Don't necessarily abort here, as preview might not be critical for generation
+        // but log it. Or decide if this is a fatal error for generation.
+        console.warn('プレビュー用音声コンテキストの初期化に失敗しました。');
+      }
+    }
+
+    isGeneratingVideo = true;
+    generateBtn.textContent = GENERATE_BUTTON_TEXT_INTERRUPT;
+    generateBtn.disabled = false; // Ensure button is clickable for interruption
+
+    recordedChunks = [];
+    recordStart = null;
+
+    statusTextUpdate('動画作成準備中');
+
   const resolutionSelect = document.getElementById('resolutionSelect');
   const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
 
@@ -320,55 +423,125 @@ generateBtn.addEventListener('click', () => {
   offCanvas.height = outputHeight;
   const offCtx = offCanvas.getContext('2d');
 
-  // offCanvas のストリームをキャプチャし、audioRecord の音声トラックと結合
+    if (!audioRecord || !audioRecord.recordStream) {
+      console.error("audioRecord or audioRecord.recordStream is not initialized.");
+      statusTextUpdate('エラー: 録音ストリームの準備ができていません。');
+      finalizeVideoGeneration(true); // Abort
+      return;
+    }
+    const audioStreamTracks = audioRecord.recordStream.getAudioTracks();
+    if (audioStreamTracks.length === 0) {
+      console.error("No audio tracks in recordStream.");
+      statusTextUpdate('エラー: 録音用音声トラックがありません。');
+      finalizeVideoGeneration(true); // Abort
+      return;
+    }
+
   const canvasStream = offCanvas.captureStream(30);
   const combined = new MediaStream([
     ...canvasStream.getVideoTracks(),
-    ...audioRecord.recordStream.getAudioTracks()
+    ...audioStreamTracks
   ]);
-  mediaRecorder = new MediaRecorder(combined, { mimeType: 'video/webm; codecs=vp8,opus' });
+
+    try {
+      mediaRecorder = new MediaRecorder(combined, { mimeType: 'video/webm; codecs=vp8,opus' });
+    } catch (e) {
+      console.error("Failed to create MediaRecorder:", e);
+      statusTextUpdate(`エラー: MediaRecorder作成失敗 (${e.message})`);
+      finalizeVideoGeneration(true);
+      return;
+    }
+  mediaRecorder.wasInterrupted = false; // Custom flag
+
   mediaRecorder.ondataavailable = (e) => {
     if (e.data.size) recordedChunks.push(e.data);
   };
+
   mediaRecorder.onstop = () => {
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'output.webm';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    generateBtn.disabled = false;
+    finalizeVideoGeneration(mediaRecorder.wasInterrupted);
   };
+
+  audioRecord.onended = () => {
+    if (isGeneratingVideo) { // Only if generation was ongoing and not already interrupted
+      statusTextUpdate('音声再生完了、動画ファイナライズ中...');
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop(); // Triggers onstop, then finalizeVideoGeneration(false)
+      } else if (mediaRecorder && mediaRecorder.state === 'inactive' && !mediaRecorder.wasInterrupted) {
+        // If recorder already stopped (e.g. very short audio), but not due to interrupt
+        finalizeVideoGeneration(false);
+      }
+      
+      progressUpdate(1, ''); // Final progress for successful completion
+
+      // Close contexts on successful completion
+      if (previewCtx && previewCtx.state !== 'closed') {
+        previewCtx.close().catch(e => console.warn("Error closing previewCtx on success:", e));
+      }
+      if (recordCtx && recordCtx.state !== 'closed') {
+        recordCtx.close().catch(e => console.warn("Error closing recordCtx on success:", e));
+      }
+    }
+    // Ensure animation stops if audio ends naturally and wasn't caught by interrupt logic
+    if (recordAnimationId) {
+      cancelAnimationFrame(recordAnimationId);
+      recordAnimationId = null;
+    }
+  };
+
+    // Resume AudioContext if it's suspended (e.g., by browser policy)
+    if (recordCtx.state === 'suspended') {
+      try {
+        await recordCtx.resume();
+      } catch (e) {
+        console.error("Failed to resume recordCtx:", e);
+        statusTextUpdate('エラー: 音声コンテキストの再開に失敗');
+        finalizeVideoGeneration(true);
+        return;
+      }
+    }
+
   audioRecord.pause();
   audioRecord.currentTime = 0;
   audioRecord.playbackRate = 1;
-  recordCtx.resume();
   statusTextUpdate('動画作成開始');
   mediaRecorder.start();
-  audioRecord.play();
+  audioRecord.play().catch(e => {
+    console.error("Error playing audio for recording:", e);
+    statusTextUpdate(`エラー: 音声再生に失敗 (${e.message})`);
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.wasInterrupted = true;
+        mediaRecorder.stop(); // This will trigger onstop
+    } else {
+        finalizeVideoGeneration(true); // Directly finalize if recorder not started
+    }
+  });
 
-  // オフスクリーンキャンバスに高解像度の描画を行い、
-  // その結果をメインキャンバスへ縮小コピーしてUIに反映する
   function drawRecord(timestamp) {
-    if (audioRecord.paused) return;
+    if (!isGeneratingVideo) { // Primary condition to stop animation loop
+      if (recordAnimationId) { cancelAnimationFrame(recordAnimationId); recordAnimationId = null; }
+      return;
+    }
+
     if (!recordStart) recordStart = timestamp;
     const elapsed = timestamp - recordStart;
     const alpha = Math.min(elapsed / fadeDuration, 1);
-    const progress = audioRecord.currentTime / audioRecord.duration;
-    const currentMinutes = Math.floor(audioRecord.currentTime / 60);
-    const currentSeconds = Math.floor(audioRecord.currentTime % 60);
-    const totalMinutes = Math.floor(audioRecord.duration / 60);
-    const totalSeconds = Math.floor(audioRecord.duration % 60);
-    const formattedCurrentTime = `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')}`;
-    const formattedTotalTime = `${totalMinutes.toString().padStart(2, '0')}:${totalSeconds.toString().padStart(2, '0')}`;
-    progressUpdate(progress, `${formattedCurrentTime}/${formattedTotalTime}`);
 
-    // offCanvas を描画対象とすることで高解像度で描画
+    let progress = 0;
+    let formattedCurrentTime = "00:00";
+    let formattedTotalTime = "00:00";
+
+    if (audioRecord.duration > 0 && Number.isFinite(audioRecord.duration)) {
+      progress = audioRecord.currentTime / audioRecord.duration;
+      const currentMinutes = Math.floor(audioRecord.currentTime / 60);
+      const currentSeconds = Math.floor(audioRecord.currentTime % 60);
+      const totalMinutes = Math.floor(audioRecord.duration / 60);
+      const totalSeconds = Math.floor(audioRecord.duration % 60);
+      formattedCurrentTime = `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')}`;
+      formattedTotalTime = `${totalMinutes.toString().padStart(2, '0')}:${totalSeconds.toString().padStart(2, '0')}`;
+    }
+    progressUpdate(progress, `${formattedCurrentTime}/${formattedTotalTime}`);    
+
     drawFrame(offCtx, recordAnalyser, recordData, alpha);
-    // offCanvas の内容をメインキャンバスに縮小描画
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(
       offCanvas,
@@ -381,17 +554,10 @@ generateBtn.addEventListener('click', () => {
       canvas.width,
       canvas.height
     );
-    requestAnimationFrame(drawRecord);
+    recordAnimationId = requestAnimationFrame(drawRecord);
   }
-
-  requestAnimationFrame(drawRecord);
-  audioRecord.onended = () => {
-    mediaRecorder.stop();
-    previewCtx.close();
-    recordCtx.close();
-    statusTextUpdate('動画作成完了');
-    progressUpdate(1, '');
-  };
+  recordAnimationId = requestAnimationFrame(drawRecord);
+  }
 });
 
 function statusTextUpdate(text) {
