@@ -194,8 +194,10 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
 
   const titleLines = titleInput.value.split('/');
   const albumText = albumInput.value;
+  const lineLength = Math.max(titleLines.length, 1) + (albumText ? 1 : 0);
   const drawY = 40 * scale;
-  const bgY = titleLines.length > 1 ? drawY + 70 * scale : drawY + 50 * scale;
+  const lineSpacing = 25 * scale;
+  const bgY = drawY + lineLength * lineSpacing;
   const LSize = bgY - 30 * scale;
   let textX = 20 * scale;
 
@@ -221,19 +223,20 @@ function drawFrame(targetCtx, analyser, dataArray, alpha) {
 
   targetCtx.globalAlpha = alpha;
   targetCtx.fillStyle = '#fff';
-  // テキストサイズをスケールに合わせて変更
-  if (titleLines.length > 1) {
-    targetCtx.font = `${24 * scale}px sans-serif`;
-    targetCtx.fillText(titleLines[0], textX, drawY);
-    targetCtx.font = `${18 * scale}px sans-serif`;
-    targetCtx.fillText(titleLines[1], textX + 20 * scale, drawY + 25 * scale);
-    targetCtx.font = `${24 * scale}px sans-serif`;
-    targetCtx.fillText(albumText, textX, drawY + 60 * scale);
-  } else {
-    targetCtx.font = `${24 * scale}px sans-serif`;
-    targetCtx.fillText(titleLines[0], textX, drawY);
-    targetCtx.fillText(albumText, textX, drawY + 40 * scale);
+  // タイトルの各行を順次描画する (1行目は大きめのフォント、それ以降は小さめ)
+  for (let i = 0; i < titleLines.length; i++) {
+    let indent = 0;
+    if (i === 0) {
+      targetCtx.font = `${24 * scale}px sans-serif`;
+    } else {
+      targetCtx.font = `${18 * scale}px sans-serif`;
+      indent = 20 * scale; // 2行目以降はインデントを追加
+    }
+    targetCtx.fillText(titleLines[i], textX + indent, drawY + i * lineSpacing);
   }
+  // アルバムテキストをタイトルの下に描画
+  targetCtx.font = `${24 * scale}px sans-serif`;
+  targetCtx.fillText(albumText, textX, drawY + titleLines.length * lineSpacing + 10 * scale);
   targetCtx.globalAlpha = 1;
 
   // dataArray が提供されていればオーディオビジュアライザを描画
@@ -338,8 +341,9 @@ function finalizeVideoGeneration(isInterrupted) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       statusTextUpdate('動画作成完了');
-    } else if (!mediaRecorder?.wasInterrupted) { // Check wasInterrupted to avoid "no data" message on interrupt
-        statusTextUpdate('動画作成完了 (データなし)');
+    } else if (!mediaRecorder?.wasInterrupted) {
+      // Check wasInterrupted to avoid "no data" message on interrupt
+      statusTextUpdate('動画作成完了 (データなし)');
     }
   }
 
@@ -370,18 +374,25 @@ generateBtn.addEventListener('click', async () => {
   } else {
     // ---- Start Generation Action ----
     if (!fileInput.files[0] && !(audioRecord && audioRecord.src)) {
-        alert('オーディオファイルを選択してください。');
-        return;
+      alert('オーディオファイルを選択してください。');
+      return;
     }
 
     // Ensure audio contexts are ready.
     // If contexts were closed by a previous successful generation, re-initialize them.
-    if (!recordCtx || recordCtx.state === 'closed' || !previewCtx || previewCtx.state === 'closed') {
-      console.log("Audio context(s) are closed or not initialized. Re-initializing audio setup.");
+    if (
+      !recordCtx ||
+      recordCtx.state === 'closed' ||
+      !previewCtx ||
+      previewCtx.state === 'closed'
+    ) {
+      console.log('Audio context(s) are closed or not initialized. Re-initializing audio setup.');
       let srcForSetup;
-      if (audioRecord && audioRecord.src) { // Use existing ObjectURL if available (e.g., from a previous load)
+      if (audioRecord && audioRecord.src) {
+        // Use existing ObjectURL if available (e.g., from a previous load)
         srcForSetup = audioRecord.src;
-      } else if (fileInput.files[0]) { // Or create a new one from the file input
+      } else if (fileInput.files[0]) {
+        // Or create a new one from the file input
         srcForSetup = URL.createObjectURL(fileInput.files[0]);
       } else {
         alert('音声ソースが見つかりません。ファイルを再選択してください。');
@@ -392,12 +403,14 @@ generateBtn.addEventListener('click', async () => {
       // and correctly re-initializes or reuses existing audio elements if appropriate.
       // Assuming setupAudios re-creates AudioContexts and related nodes.
       setupAudios(srcForSetup);
-      if (!recordCtx || recordCtx.state === 'closed') { // Check again after setup
+      if (!recordCtx || recordCtx.state === 'closed') {
+        // Check again after setup
         alert('録音用音声コンテキストの初期化に失敗しました。');
         finalizeVideoGeneration(true); // Abort
         return;
       }
-      if (!previewCtx || previewCtx.state === 'closed') { // Check again after setup
+      if (!previewCtx || previewCtx.state === 'closed') {
+        // Check again after setup
         alert('プレビュー用音声コンテキストの初期化に失敗しました。');
         // Don't necessarily abort here, as preview might not be critical for generation
         // but log it. Or decide if this is a fatal error for generation.
@@ -414,149 +427,155 @@ generateBtn.addEventListener('click', async () => {
 
     statusTextUpdate('動画作成準備中');
 
-  const resolutionSelect = document.getElementById('resolutionSelect');
-  const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
+    const resolutionSelect = document.getElementById('resolutionSelect');
+    const [outputWidth, outputHeight] = resolutionSelect.value.split('x').map(Number);
 
-  // オフスクリーンキャンバスの生成
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = outputWidth;
-  offCanvas.height = outputHeight;
-  const offCtx = offCanvas.getContext('2d');
+    // オフスクリーンキャンバスの生成
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = outputWidth;
+    offCanvas.height = outputHeight;
+    const offCtx = offCanvas.getContext('2d');
 
     if (!audioRecord || !audioRecord.recordStream) {
-      console.error("audioRecord or audioRecord.recordStream is not initialized.");
+      console.error('audioRecord or audioRecord.recordStream is not initialized.');
       statusTextUpdate('エラー: 録音ストリームの準備ができていません。');
       finalizeVideoGeneration(true); // Abort
       return;
     }
     const audioStreamTracks = audioRecord.recordStream.getAudioTracks();
     if (audioStreamTracks.length === 0) {
-      console.error("No audio tracks in recordStream.");
+      console.error('No audio tracks in recordStream.');
       statusTextUpdate('エラー: 録音用音声トラックがありません。');
       finalizeVideoGeneration(true); // Abort
       return;
     }
 
-  const canvasStream = offCanvas.captureStream(30);
-  const combined = new MediaStream([
-    ...canvasStream.getVideoTracks(),
-    ...audioStreamTracks
-  ]);
+    const canvasStream = offCanvas.captureStream(30);
+    const combined = new MediaStream([...canvasStream.getVideoTracks(), ...audioStreamTracks]);
 
     try {
       mediaRecorder = new MediaRecorder(combined, { mimeType: 'video/webm; codecs=vp8,opus' });
     } catch (e) {
-      console.error("Failed to create MediaRecorder:", e);
+      console.error('Failed to create MediaRecorder:', e);
       statusTextUpdate(`エラー: MediaRecorder作成失敗 (${e.message})`);
       finalizeVideoGeneration(true);
       return;
     }
-  mediaRecorder.wasInterrupted = false; // Custom flag
+    mediaRecorder.wasInterrupted = false; // Custom flag
 
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data.size) recordedChunks.push(e.data);
-  };
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size) recordedChunks.push(e.data);
+    };
 
-  mediaRecorder.onstop = () => {
-    finalizeVideoGeneration(mediaRecorder.wasInterrupted);
-  };
+    mediaRecorder.onstop = () => {
+      finalizeVideoGeneration(mediaRecorder.wasInterrupted);
+    };
 
-  audioRecord.onended = () => {
-    if (isGeneratingVideo) { // Only if generation was ongoing and not already interrupted
-      statusTextUpdate('音声再生完了、動画ファイナライズ中...');
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop(); // Triggers onstop, then finalizeVideoGeneration(false)
-      } else if (mediaRecorder && mediaRecorder.state === 'inactive' && !mediaRecorder.wasInterrupted) {
-        // If recorder already stopped (e.g. very short audio), but not due to interrupt
-        finalizeVideoGeneration(false);
+    audioRecord.onended = () => {
+      if (isGeneratingVideo) {
+        // Only if generation was ongoing and not already interrupted
+        statusTextUpdate('音声再生完了、動画ファイナライズ中...');
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop(); // Triggers onstop, then finalizeVideoGeneration(false)
+        } else if (
+          mediaRecorder &&
+          mediaRecorder.state === 'inactive' &&
+          !mediaRecorder.wasInterrupted
+        ) {
+          // If recorder already stopped (e.g. very short audio), but not due to interrupt
+          finalizeVideoGeneration(false);
+        }
+
+        progressUpdate(1, ''); // Final progress for successful completion
+
+        // Close contexts on successful completion
+        if (previewCtx && previewCtx.state !== 'closed') {
+          previewCtx.close().catch((e) => console.warn('Error closing previewCtx on success:', e));
+        }
+        if (recordCtx && recordCtx.state !== 'closed') {
+          recordCtx.close().catch((e) => console.warn('Error closing recordCtx on success:', e));
+        }
       }
-      
-      progressUpdate(1, ''); // Final progress for successful completion
-
-      // Close contexts on successful completion
-      if (previewCtx && previewCtx.state !== 'closed') {
-        previewCtx.close().catch(e => console.warn("Error closing previewCtx on success:", e));
+      // Ensure animation stops if audio ends naturally and wasn't caught by interrupt logic
+      if (recordAnimationId) {
+        cancelAnimationFrame(recordAnimationId);
+        recordAnimationId = null;
       }
-      if (recordCtx && recordCtx.state !== 'closed') {
-        recordCtx.close().catch(e => console.warn("Error closing recordCtx on success:", e));
-      }
-    }
-    // Ensure animation stops if audio ends naturally and wasn't caught by interrupt logic
-    if (recordAnimationId) {
-      cancelAnimationFrame(recordAnimationId);
-      recordAnimationId = null;
-    }
-  };
+    };
 
     // Resume AudioContext if it's suspended (e.g., by browser policy)
     if (recordCtx.state === 'suspended') {
       try {
         await recordCtx.resume();
       } catch (e) {
-        console.error("Failed to resume recordCtx:", e);
+        console.error('Failed to resume recordCtx:', e);
         statusTextUpdate('エラー: 音声コンテキストの再開に失敗');
         finalizeVideoGeneration(true);
         return;
       }
     }
 
-  audioRecord.pause();
-  audioRecord.currentTime = 0;
-  audioRecord.playbackRate = 1;
-  statusTextUpdate('動画作成開始');
-  mediaRecorder.start();
-  audioRecord.play().catch(e => {
-    console.error("Error playing audio for recording:", e);
-    statusTextUpdate(`エラー: 音声再生に失敗 (${e.message})`);
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
+    audioRecord.pause();
+    audioRecord.currentTime = 0;
+    audioRecord.playbackRate = 1;
+    statusTextUpdate('動画作成開始');
+    mediaRecorder.start();
+    audioRecord.play().catch((e) => {
+      console.error('Error playing audio for recording:', e);
+      statusTextUpdate(`エラー: 音声再生に失敗 (${e.message})`);
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.wasInterrupted = true;
         mediaRecorder.stop(); // This will trigger onstop
-    } else {
+      } else {
         finalizeVideoGeneration(true); // Directly finalize if recorder not started
+      }
+    });
+
+    function drawRecord(timestamp) {
+      if (!isGeneratingVideo) {
+        // Primary condition to stop animation loop
+        if (recordAnimationId) {
+          cancelAnimationFrame(recordAnimationId);
+          recordAnimationId = null;
+        }
+        return;
+      }
+
+      if (!recordStart) recordStart = timestamp;
+      const elapsed = timestamp - recordStart;
+      const alpha = Math.min(elapsed / fadeDuration, 1);
+
+      let progress = 0;
+      let formattedCurrentTime = '00:00';
+      let formattedTotalTime = '00:00';
+
+      if (audioRecord.duration > 0 && Number.isFinite(audioRecord.duration)) {
+        progress = audioRecord.currentTime / audioRecord.duration;
+        const currentMinutes = Math.floor(audioRecord.currentTime / 60);
+        const currentSeconds = Math.floor(audioRecord.currentTime % 60);
+        const totalMinutes = Math.floor(audioRecord.duration / 60);
+        const totalSeconds = Math.floor(audioRecord.duration % 60);
+        formattedCurrentTime = `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')}`;
+        formattedTotalTime = `${totalMinutes.toString().padStart(2, '0')}:${totalSeconds.toString().padStart(2, '0')}`;
+      }
+      progressUpdate(progress, `${formattedCurrentTime}/${formattedTotalTime}`);
+
+      drawFrame(offCtx, recordAnalyser, recordData, alpha);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        offCanvas,
+        0,
+        0,
+        offCanvas.width,
+        offCanvas.height,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+      recordAnimationId = requestAnimationFrame(drawRecord);
     }
-  });
-
-  function drawRecord(timestamp) {
-    if (!isGeneratingVideo) { // Primary condition to stop animation loop
-      if (recordAnimationId) { cancelAnimationFrame(recordAnimationId); recordAnimationId = null; }
-      return;
-    }
-
-    if (!recordStart) recordStart = timestamp;
-    const elapsed = timestamp - recordStart;
-    const alpha = Math.min(elapsed / fadeDuration, 1);
-
-    let progress = 0;
-    let formattedCurrentTime = "00:00";
-    let formattedTotalTime = "00:00";
-
-    if (audioRecord.duration > 0 && Number.isFinite(audioRecord.duration)) {
-      progress = audioRecord.currentTime / audioRecord.duration;
-      const currentMinutes = Math.floor(audioRecord.currentTime / 60);
-      const currentSeconds = Math.floor(audioRecord.currentTime % 60);
-      const totalMinutes = Math.floor(audioRecord.duration / 60);
-      const totalSeconds = Math.floor(audioRecord.duration % 60);
-      formattedCurrentTime = `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')}`;
-      formattedTotalTime = `${totalMinutes.toString().padStart(2, '0')}:${totalSeconds.toString().padStart(2, '0')}`;
-    }
-    progressUpdate(progress, `${formattedCurrentTime}/${formattedTotalTime}`);    
-
-    drawFrame(offCtx, recordAnalyser, recordData, alpha);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(
-      offCanvas,
-      0,
-      0,
-      offCanvas.width,
-      offCanvas.height,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
     recordAnimationId = requestAnimationFrame(drawRecord);
-  }
-  recordAnimationId = requestAnimationFrame(drawRecord);
   }
 });
 
