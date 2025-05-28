@@ -1,8 +1,9 @@
-import { Menu, app, dialog } from 'electron';
+import { Menu, app, dialog, shell } from 'electron';
 import fs from 'fs';
 import mime from 'mime';
 import Store from 'electron-store';
-import { electron } from 'process';
+
+import { logFilePath } from './ipcHandlers/logger.mjs';
 
 const store = new Store();
 
@@ -33,6 +34,24 @@ export function createMenu(mainWindow) {
           label: '終了', // Submenu item: Exit
           click: () => app.quit(), // Standard exit handler
           accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Alt+F4' // Add accelerator
+        }
+      ]
+    },
+    {
+      label: '機能',
+      submenu: [
+        {
+          label: 'ログ',
+          submenu: [
+            {
+              label: '表示',
+              click: () => showLogFile(mainWindow)
+            },
+            {
+              label: 'クリア',
+              click: () => clearLog(mainWindow)
+            }
+          ]
         }
       ]
     }
@@ -78,3 +97,39 @@ function storeImageData(tag, filePath) {
 function requestRefreshCanvas(mainWindow) {
   mainWindow.webContents.send('requestRefreshCanvas');
 }
+
+//#region ログ関係
+
+function showLogFile(mainWindow) {
+  if (logFilePath && fs.existsSync(logFilePath)) {
+    shell.openPath(logFilePath).catch((err) => {
+      console.error('Failed to open log file:', err);
+      dialog.showErrorBox('エラー', 'ログファイルを開けませんでした。');
+    });
+  } else {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'ログファイル',
+      message: 'ログファイルはまだ作成されていません。'
+    });
+  }
+}
+
+function clearLog(mainWindow) {
+  if (fs.existsSync(logFilePath)) {
+    fs.writeFileSync(logFilePath, '');
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'ログクリア',
+      message: 'ログファイルをクリアしました。'
+    });
+  } else {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'ログクリア',
+      message: 'ログファイルはまだ作成されていません。'
+    });
+  }
+}
+
+//#endregion

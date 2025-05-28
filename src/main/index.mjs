@@ -3,7 +3,7 @@ import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { registerHandlers } from './ipcHandlers/settingHandlers.mjs';
 import icon from '../../resources/icon.png?asset';
-import { register } from 'module';
+import { registerHandlers as loggerHandlers } from './ipcHandlers/logger.mjs';
 
 import { createMenu } from './menu.mjs';
 
@@ -60,6 +60,7 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'));
 
   registerHandlers();
+  loggerHandlers();
   createWindow();
 
   app.on('activate', function () {

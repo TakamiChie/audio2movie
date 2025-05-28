@@ -464,10 +464,12 @@ generateBtn.addEventListener('click', async () => {
     mediaRecorder.wasInterrupted = false; // Custom flag
 
     mediaRecorder.ondataavailable = (e) => {
+      console.log('MediaRecorder ondataavailable event:', e);
       if (e.data.size) recordedChunks.push(e.data);
     };
 
     mediaRecorder.onstop = () => {
+      console.log('MediaRecorder onstop event triggered');
       finalizeVideoGeneration(mediaRecorder.wasInterrupted);
     };
 
@@ -532,15 +534,23 @@ generateBtn.addEventListener('click', async () => {
     });
 
     function drawRecord(timestamp) {
+      const diff = timestamp - audioRecord.currentTime;
+      console.log(
+        'Frame update - timestamp:',
+        timestamp,
+        'audioRecord.currentTime:',
+        audioRecord.currentTime,
+        '(diff:',
+        diff,
+        ')'
+      );
       if (!isGeneratingVideo) {
-        // Primary condition to stop animation loop
         if (recordAnimationId) {
           cancelAnimationFrame(recordAnimationId);
           recordAnimationId = null;
         }
         return;
       }
-
       if (!recordStart) recordStart = timestamp;
       const elapsed = timestamp - recordStart;
       const alpha = Math.min(elapsed / fadeDuration, 1);
