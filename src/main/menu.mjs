@@ -61,6 +61,8 @@ export function createMenu(mainWindow) {
   return menu;
 }
 
+//#region 画像関係
+
 async function selectLogo(mainWindow) {
   const filePath = await getOpenFileName();
   if (filePath) {
@@ -97,6 +99,8 @@ function storeImageData(tag, filePath) {
 function requestRefreshCanvas(mainWindow) {
   mainWindow.webContents.send('requestRefreshCanvas');
 }
+
+//#endregion
 
 //#region ログ関係
 
