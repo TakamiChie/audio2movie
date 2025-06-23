@@ -33,6 +33,7 @@ export function registerHandlers() {
     atempoFilters.push(`atempo=${remain}`);
     const filter = `[0:v]setpts=${speed}*PTS[v];[0:a]${atempoFilters.join(',')}[a]`;
 
+    // 音声劣化を防ぐため品質指定を追加
     const args = [
       '-y',
       '-i',
@@ -43,6 +44,14 @@ export function registerHandlers() {
       '[v]',
       '-map',
       '[a]',
+      '-c:v',
+      'libvpx-vp9',
+      '-c:a',
+      'libvorbis',
+      '-b:a',
+      '192k',
+      '-ar',
+      '48000',
       outputPath
     ];
 
