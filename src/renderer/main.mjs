@@ -313,8 +313,8 @@ stopBtn.addEventListener('click', () => {
   audioPreview.currentTime = 0;
 });
 
-// Function to handle the actual stop/cleanup of video generation
-function finalizeVideoGeneration(isInterrupted) {
+// 実際の停止と後処理を行う関数
+async function finalizeVideoGeneration(isInterrupted) {
   if (recordAnimationId) {
     cancelAnimationFrame(recordAnimationId);
     recordAnimationId = null;
@@ -331,7 +331,16 @@ function finalizeVideoGeneration(isInterrupted) {
   } else {
     // This case is for successful completion
     if (recordedChunks && recordedChunks.length > 0) {
-      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      let blob = new Blob(recordedChunks, { type: 'video/webm' });
+      if (speedSelect.value !== '1') {
+        statusTextUpdate('速度調整中...');
+        const buffer = await blob.arrayBuffer();
+        const base64 = await window.api.adjustVideoSpeed(buffer, parseFloat(speedSelect.value));
+        const binary = atob(base64);
+        const array = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+        blob = new Blob([array], { type: 'video/webm' });
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -519,8 +528,9 @@ generateBtn.addEventListener('click', async () => {
 
     audioRecord.pause();
     audioRecord.currentTime = 0;
-    audioRecord.playbackRate = 1;
-    statusTextUpdate('動画作成開始');
+    // 生成時間短縮のため再生速度をユーザー指定に合わせる
+    audioRecord.playbackRate = parseFloat(speedSelect.value);
+    statusTextUpdate(`動画作成開始(${speedSelect.value}×速)`);
     mediaRecorder.start();
     audioRecord.play().catch((e) => {
       console.error('Error playing audio for recording:', e);

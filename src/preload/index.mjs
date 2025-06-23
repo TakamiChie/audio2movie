@@ -6,6 +6,7 @@ const api = {
   loadImageBase64: (tag) => ipcRenderer.invoke('load-image-base64', tag),
   getColorSchemes: () => ipcRenderer.invoke('get-color-schemes'),
   logMessage: (message) => ipcRenderer.invoke('log-message', message),
+  adjustVideoSpeed: (buffer, speed) => ipcRenderer.invoke('adjust-video-speed', buffer, speed),
   on: (event, callback) => ipcRenderer.on(event, callback),
   ping: () => ipcRenderer.invoke('ping')
 };
