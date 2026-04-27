@@ -66,6 +66,7 @@ def create_movie(
     height: int,
     fps: int,
     keep_work: bool = False,
+    no_audio: bool = False,
 ) -> None:
     require_ffmpeg()
 
@@ -96,7 +97,10 @@ def create_movie(
         silent_video = _combine_with_transitions(
             scene_videos, scenario.scenes, work_dir_path
         )
-        mux_audio(silent_video, audio_path, output_path)
+        if no_audio:
+            shutil.copy(silent_video, output_path)
+        else:
+            mux_audio(silent_video, audio_path, output_path)
         print(f"Created: {output_path}")
     finally:
         if keep_work:

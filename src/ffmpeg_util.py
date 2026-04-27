@@ -13,9 +13,12 @@ def require_ffmpeg() -> None:
 
 
 def run_ffmpeg(args: list[str]) -> None:
-    result = subprocess.run(args)
+    result = subprocess.run(args, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"ffmpeg command failed: {' '.join(args)}")
+        error_msg = result.stderr or result.stdout
+        raise RuntimeError(
+            f"ffmpeg command failed: {' '.join(args)}\nError: {error_msg}"
+        )
 
 
 def get_audio_duration(audio_path: Path) -> float:
@@ -68,11 +71,13 @@ def mux_audio(video_path: Path, audio_path: Path, output_path: Path) -> None:
             "-map",
             "0:v:0",
             "-map",
-            "1:a:0",
+            "1:a",
             "-c:v",
             "copy",
             "-c:a",
             "aac",
+            "-b:a",
+            "192k",
             "-shortest",
             str(output_path),
         ]

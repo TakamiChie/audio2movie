@@ -16,6 +16,9 @@ def main() -> None:
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--root", default=".", help="Project root directory")
     parser.add_argument("--keep-work", action="store_true", help="Keep temporary files")
+    parser.add_argument(
+        "--noaudio", action="store_true", help="Do not mux audio into the output video"
+    )
     args = parser.parse_args()
 
     create_movie(
@@ -27,4 +30,5 @@ def main() -> None:
         height=args.height,
         fps=args.fps,
         keep_work=args.keep_work,
+        no_audio=args.noaudio,
     )
