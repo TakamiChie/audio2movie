@@ -1,6 +1,7 @@
 import json
 import shutil
 import subprocess
+import struct
 from pathlib import Path
 
 
@@ -57,6 +58,25 @@ def concat_videos(video_paths: list[Path], list_file: Path, output_path: Path) -
             str(output_path),
         ]
     )
+
+
+def get_audio_levels(audio_path: Path, sample_rate: int = 1000) -> list[float]:
+    """音声ファイルから振幅データを抽出します。"""
+    cmd = [
+        "ffmpeg",
+        "-i",
+        str(audio_path),
+        "-ar",
+        str(sample_rate),
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "-",
+    ]
+    result = subprocess.run(cmd, capture_output=True, check=True)
+    count = len(result.stdout) // 4
+    return list(struct.unpack(f"<{count}f", result.stdout))
 
 
 def mux_audio(video_path: Path, audio_path: Path, output_path: Path) -> None:

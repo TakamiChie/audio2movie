@@ -8,8 +8,14 @@
 
 <body>
   <div class="scene">Scene 02</div>
+  <!-- ビジュアライザー表示用のキャンバスを追加 -->
+  <canvas id="visualizer" width="800" height="200"></canvas>
+
   <script src="script.js"></script>
-  <script>startAnimation(3.0);</script>
+  <script>
+    startAnimation(3.0);
+    initVisualizer('visualizer');
+  </script>
 </body>
 
 </html>

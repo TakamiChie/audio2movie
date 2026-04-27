@@ -84,15 +84,35 @@ def create_movie(
     audio_duration = get_audio_duration(audio_path)
     scenario = load_scenario(scenario_path, audio_duration)
 
+    # オーディオビジュアライザー用のデータ抽出（全テンプレートで利用可能にする）
+    audio_sample_rate = 1000
+    from .ffmpeg_util import get_audio_levels
+
+    audio_data = get_audio_levels(audio_path, audio_sample_rate)
+
     work_dir_path = Path(tempfile.mkdtemp(prefix="audio2movie_"))
     try:
         scene_videos: list[Path] = []
+        current_offset = 0.0
         for index, scene in enumerate(scenario.scenes, start=1):
             html_path = _scene_path(template_dir, scene)
             scene_video = work_dir_path / f"scene_{index:03}.mp4"
             print(f"Render scene {index}: {scene.html} / {scene.duration:.2f}s")
-            render_scene(html_path, scene_video, scene.duration, width, height, fps)
+
+            render_scene(
+                html_path,
+                scene_video,
+                scene.duration,
+                width,
+                height,
+                fps,
+                audio_data=audio_data,
+                audio_start_time=current_offset,
+                audio_sample_rate=audio_sample_rate,
+            )
             scene_videos.append(scene_video)
+            # 次のシーンの開始時間を計算（トランジションによる重なりを考慮）
+            current_offset += scene.duration - scene.transition.duration
 
         silent_video = _combine_with_transitions(
             scene_videos, scenario.scenes, work_dir_path
