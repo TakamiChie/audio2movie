@@ -14,11 +14,12 @@ def require_ffmpeg() -> None:
 
 
 def run_ffmpeg(args: list[str]) -> None:
-    result = subprocess.run(args, capture_output=True, text=True)
+    cmd = [args[0], "-hide_banner", "-loglevel", "error"] + args[1:]
+    result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         error_msg = result.stderr or result.stdout
         raise RuntimeError(
-            f"ffmpeg command failed: {' '.join(args)}\nError: {error_msg}"
+            f"ffmpeg command failed: {' '.join(cmd)}\nError: {error_msg}"
         )
 
 
@@ -64,6 +65,9 @@ def get_audio_levels(audio_path: Path, sample_rate: int = 1000) -> list[float]:
     """音声ファイルから振幅データを抽出します。"""
     cmd = [
         "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
         "-i",
         str(audio_path),
         "-ar",

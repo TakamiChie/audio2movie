@@ -23,6 +23,9 @@ async def render_html_to_video(
     ffmpeg = subprocess.Popen(
         [
             "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
             "-y",
             "-f",
             "image2pipe",
@@ -73,7 +76,15 @@ async def render_html_to_video(
                 if ffmpeg.stdin is None:
                     raise RuntimeError("ffmpeg stdin could not be opened.")
                 ffmpeg.stdin.write(png)
+
+                if (frame + 1) % fps == 0 or (frame + 1) == total_frames:
+                    print(
+                        f"  Frame {frame + 1}/{total_frames} ({(frame + 1)/total_frames*100:3.0f}%)",
+                        end="\r",
+                        flush=True,
+                    )
                 await page.wait_for_timeout(frame_interval_ms)
+            print()
 
             await browser.close()
     finally:
