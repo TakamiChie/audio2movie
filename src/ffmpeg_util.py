@@ -23,7 +23,7 @@ def run_ffmpeg(args: list[str]) -> None:
         )
 
 
-def get_audio_duration(audio_path: Path) -> float:
+def get_media_duration(path: Path) -> float:
     cmd = [
         "ffprobe",
         "-v",
@@ -32,7 +32,7 @@ def get_audio_duration(audio_path: Path) -> float:
         "format=duration",
         "-of",
         "json",
-        str(audio_path),
+        str(path),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
     data = json.loads(result.stdout)
@@ -59,6 +59,34 @@ def concat_videos(video_paths: list[Path], list_file: Path, output_path: Path) -
             str(output_path),
         ]
     )
+
+
+def process_video_scene(
+    input_path: Path,
+    output_path: Path,
+    duration: float,
+    width: int,
+    height: int,
+    fps: int,
+) -> None:
+    """動画をプロジェクトの設定に合わせて切り抜き・変換します。"""
+    args = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(input_path),
+        "-t",
+        str(duration),
+        "-vf",
+        f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,format=yuv420p",
+        "-r",
+        str(fps),
+        "-c:v",
+        "libx264",
+        "-an",
+        str(output_path),
+    ]
+    run_ffmpeg(args)
 
 
 def get_audio_levels(audio_path: Path, sample_rate: int = 1000) -> list[float]:

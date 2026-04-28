@@ -10,9 +10,10 @@ class Transition:
 
 @dataclass
 class Scene:
-    html: str
     duration: float | str
     transition: Transition
+    html: Optional[str] = None
+    video: Optional[str] = None
 
 
 class Scenario:

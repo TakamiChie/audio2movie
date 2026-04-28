@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from .ffmpeg_util import get_media_duration
 
 from src.models import Scenario, Scene, Transition
 
@@ -21,17 +22,43 @@ def load_scenario(scenario_path: Path, audio_duration: float) -> Scenario:
     scenes = []
     rem_scene = None
     fixed_duration_total = 0.0
+    template_dir = scenario_path.parent
 
     for index, item in enumerate(data["scenes"]):
-        duration = _read_seconds(item.get("duration"))
+        html = item.get("html")
+        video = item.get("video")
+        if not html and not video:
+            raise ValueError(f"Scene {index} must have 'html' or 'video'")
+
+        duration_val = item.get("duration")
+        if video:
+            if duration_val == "rem":
+                raise ValueError("duration: 'rem' cannot be used with video scenes")
+
+            video_path = template_dir / video
+            if not video_path.exists():
+                raise FileNotFoundError(f"Video file not found: {video_path}")
+
+            actual_duration = get_media_duration(video_path)
+            if duration_val is None:
+                duration = actual_duration
+            else:
+                duration = float(duration_val)
+                if duration > actual_duration:
+                    raise ValueError(
+                        f"Requested duration {duration} exceeds video duration {actual_duration}"
+                    )
+        else:
+            duration = _read_seconds(duration_val)
+
         transition = item.get("transition", {})
         transition_duration = float(transition.get("duration", 0))
-
         if transition_duration < 0:
             raise ValueError("transition.duration must be 0 or greater")
 
         scene = Scene(
-            html=item["html"],
+            html=html,
+            video=video,
             duration=duration,
             transition=Transition(
                 name=transition.get("name", "none"),
