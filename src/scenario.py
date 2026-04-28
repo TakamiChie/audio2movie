@@ -56,6 +56,13 @@ def load_scenario(scenario_path: Path, audio_duration: float) -> Scenario:
         if transition_duration < 0:
             raise ValueError("transition.duration must be 0 or greater")
 
+        # durationが数値の場合、トランジション時間より長いかチェック
+        if duration != "rem":
+            if float(duration) <= transition_duration:
+                raise ValueError(
+                    f"Scene {index}: duration ({duration}) must be greater than transition duration ({transition_duration})"
+                )
+
         scene = Scene(
             html=html,
             video=video,
@@ -84,6 +91,10 @@ def load_scenario(scenario_path: Path, audio_duration: float) -> Scenario:
         if rem_duration <= 0:
             raise ValueError("rem duration is less than or equal to 0")
         rem_scene.duration = rem_duration
+        if rem_duration <= rem_scene.transition.duration:
+            raise ValueError(
+                f"Calculated 'rem' duration ({rem_duration:.2f}s) is too short for its transition ({rem_scene.transition.duration}s)"
+            )
 
     s = Scenario(scenes=scenes)
     if s.total_video_duration() > audio_duration:

@@ -2,10 +2,10 @@
   "scenes": [
     {
       "html": "01.html",
-      "duration": 1,
+      "duration": 2,
       "transition": {
         "name": "fade",
-        "duration": 0.5
+        "duration": 1
       }
     },
     {
@@ -18,10 +18,10 @@
     },
     {
       "html": "03.html",
-      "duration": 1,
+      "duration": 2,
       "transition": {
         "name": "fade",
-        "duration": 0.5
+        "duration": 1
       }
     },
     {
