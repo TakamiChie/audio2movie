@@ -83,6 +83,8 @@ def process_video_scene(
         str(fps),
         "-c:v",
         "libx264",
+        "-preset",
+        "ultrafast",
         "-an",
         str(output_path),
     ]

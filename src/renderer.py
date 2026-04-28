@@ -36,6 +36,8 @@ async def render_html_to_video(
             "-an",
             "-c:v",
             "libx264",
+            "-preset",
+            "ultrafast",
             "-pix_fmt",
             "yuv420p",
             "-movflags",
@@ -72,10 +74,11 @@ async def render_html_to_video(
                     }""",
                     float(frame * frame_interval_ms),
                 )
-                png = await page.screenshot(type="png", full_page=False)
+                # PNGよりも高速なJPEGを使用
+                img = await page.screenshot(type="jpeg", quality=90, full_page=False)
                 if ffmpeg.stdin is None:
                     raise RuntimeError("ffmpeg stdin could not be opened.")
-                ffmpeg.stdin.write(png)
+                ffmpeg.stdin.write(img)
 
                 if (frame + 1) % fps == 0 or (frame + 1) == total_frames:
                     print(
@@ -83,7 +86,6 @@ async def render_html_to_video(
                         end="\r",
                         flush=True,
                     )
-                await page.wait_for_timeout(frame_interval_ms)
             print()
 
             await browser.close()
