@@ -7,12 +7,14 @@ from .ffmpeg_util import get_media_duration
 from src.models import Scenario, Scene, Transition
 
 
-def _read_seconds(value: Any) -> float | str:
+def _read_seconds(value: Any, context: str) -> float | str:
     if value == "rem":
         return "rem"
     if isinstance(value, int | float) and value > 0:
         return float(value)
-    raise ValueError("scene.duration は正の数値または 'rem' を指定してください。")
+    raise ValueError(
+        f"{context}: scene.duration は正の数値または 'rem' を指定してください。"
+    )
 
 
 def load_scenario(scenario_path: Path, audio_duration: float) -> Scenario:
@@ -49,7 +51,7 @@ def load_scenario(scenario_path: Path, audio_duration: float) -> Scenario:
                         f"Requested duration {duration} exceeds video duration {actual_duration}"
                     )
         else:
-            duration = _read_seconds(duration_val)
+            duration = _read_seconds(duration_val, f"Scene {index}")
 
         transition = item.get("transition", {})
         transition_duration = float(transition.get("duration", 0))
