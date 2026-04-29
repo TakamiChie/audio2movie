@@ -1,6 +1,7 @@
 import argparse
 import tempfile
 from pathlib import Path
+from datetime import datetime
 
 from .pipeline import create_movie
 from .ffmpeg_util import run_ffmpeg
@@ -25,6 +26,10 @@ def main() -> None:
         type=int,
         help="Create a test video of specified duration (seconds) using looped beat.mp3",
     )
+    parser.add_argument(
+        "--noaudio", action="store_true", help="Do not mux audio into the output video"
+    )
+
     args = parser.parse_args()
 
     start_time = datetime.now()
@@ -95,6 +100,7 @@ def main() -> None:
             height=args.height,
             fps=args.fps,
             keep_work=args.keep_work,
+            no_audio=args.noaudio,
         )
     finally:
         if args.testtpl and audio_path and audio_path.exists():
