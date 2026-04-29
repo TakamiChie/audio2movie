@@ -1,0 +1,232 @@
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 背景画像の設定とぼかし加工 */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('photo.png');
+  background-size: cover;
+  background-position: center;
+  filter: blur(30px);
+  /* ぼかしによって端に白い隙間ができるのを防ぐため、少しだけ拡大表示する */
+  transform: scale(1.1);
+  z-index: -1;
+}
+
+h1 {
+  display: none;
+}
+
+/* Scene 01 全体のレイアウト設定 */
+
+/* ロゴの配置を中央に固定 */
+#scene1 .scene {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#scene1 .logo {
+  max-width: 80%;
+  /* 画面幅に合わせたロゴの最大サイズ */
+  height: auto;
+  position: relative;
+  z-index: 1;
+  /* ぼんやりと浮かび上がるアニメーションを適用 */
+  animation: logoFadeIn 1s ease-out forwards;
+}
+
+#scene2 .photo h2,
+#scene2 .keyword h2 {
+  display: none;
+}
+
+/* Scene 02 全体のレイアウト設定 */
+
+/* ロゴ: 左上に配置 */
+#scene2 .scene {
+  position: absolute;
+  top: 40px;
+  left: 120px;
+}
+
+/* 写真: 右上に配置（付箋紙風） */
+#scene2 .photo {
+  position: absolute;
+  top: 5%;
+  right: 15%;
+  width: 500px;
+  background-color: #fff9c4;
+  /* 付箋らしい薄黄色 */
+  padding: 20px 20px 80px 20px;
+  /* 下部に少し余白を持たせて手書き感を演出 */
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+  transform: rotate(3deg);
+  /* わずかに傾ける */
+  border-bottom-right-radius: 30px 5px;
+  /* わずかな紙の浮きを表現 */
+}
+
+/* マスキングテープのエフェクトを追加 */
+#scene2 .photo::before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 120px;
+  height: 35px;
+  background-color: rgba(255, 255, 255, 0.5);
+  /* 半透明の白（和紙のような質感） */
+  backdrop-filter: blur(2px);
+  /* 下の画像が少し透けて見えるようにぼかす */
+  transform: translateX(-50%) rotate(-2deg);
+  /* 中央に配置して少し傾ける */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  /* 画像の上に表示 */
+}
+
+#scene2 .photo img {
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* ゲスト紹介ボード: 左下に配置 */
+#scene2 .board {
+  position: absolute;
+  bottom: 40px;
+  left: 40px;
+  width: 580px;
+  height: 400px;
+  max-height: 50%;
+  background-color: #d2b48c;
+  /* コルクのベース色 */
+  background-image:
+    radial-gradient(#bc9a78 15%, transparent 16%),
+    radial-gradient(#bc9a78 15%, transparent 16%);
+  background-size: 8px 8px;
+  background-position: 0 0, 4px 4px;
+  padding: 25px;
+  border: 12px solid;
+  border-image: linear-gradient(to right, #5d4037, #8d6e63 25%, #5d4037 50%, #7b5e57 75%, #5d4037) 1;
+  /* 木目のような色の変化をグラデーションで表現 */
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+#scene2 .board h2 {
+  display: inline-block;
+  background-color: #fffde7;
+  /* 薄い黄色の付箋色 */
+  padding: 4px 12px;
+  margin: -5px 0 10px -10px;
+  /* 少し枠からはみ出すように配置 */
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
+  transform: rotate(-1deg);
+  /* わずかに傾けて手貼り感を演出 */
+  font-size: 1.2rem;
+  color: #5d4037;
+}
+
+#scene2 .board p {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 0 0 50px 0;
+  padding-left: 15px;
+  /* 内容を字下げしてラベルとの関連を明確に */
+}
+
+/* キーワード: 右下に配置 */
+#scene2 .keyword {
+  position: absolute;
+  bottom: 90px;
+  right: 60px;
+  height: 4em;
+  width: 380px;
+  background: #d8b58a;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 30px 30px 5px 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  border: 4px solid #5d4037;
+}
+
+/* 吹き出しのしっぽ部分（フチ） */
+#scene2 .keyword::before {
+  content: "";
+  position: absolute;
+  bottom: -44px;
+  right: 26px;
+  border-width: 40px 40px 0 0;
+  border-style: solid;
+  border-color: #5d4037 transparent transparent transparent;
+  z-index: 0;
+}
+
+/* 吹き出しのしっぽ部分（中身） */
+#scene2 .keyword::after {
+  content: "";
+  position: absolute;
+  bottom: -30px;
+  right: 30px;
+  border-width: 30px 30px 0 0;
+  border-style: solid;
+  border-color: #d8b58a transparent transparent transparent;
+  z-index: 1;
+}
+
+#scene2 .keyword p {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* ビジュアライザー: ボードとキーワードの間に配置 */
+#scene2 .visualizer {
+  position: absolute;
+  bottom: 160px;
+  left: 730px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  /* ボードの幅 + 余白 */
+  right: 550px;
+  /* キーワードの幅 + 余白 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#scene2 #visualizer {
+  width: 800px;
+  height: 250px;
+  max-width: 800px;
+}
+
+/* ロゴの出現アニメーション定義 */
+@keyframes logoFadeIn {
+  0% {
+    opacity: 0;
+    filter: blur(20px);
+  }
+
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
