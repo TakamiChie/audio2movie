@@ -41,9 +41,6 @@ h1 {
 }
 
 #scene1 .logo {
-  max-width: 80%;
-  /* 画面幅に合わせたロゴの最大サイズ */
-  height: auto;
   position: relative;
   z-index: 1;
   /* ぼんやりと浮かび上がるアニメーションを適用 */
