@@ -201,7 +201,7 @@ h1 {
   position: absolute;
   bottom: 160px;
   left: 730px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.8);
   border-radius: 20px;
   /* ボードの幅 + 余白 */
   right: 550px;
