@@ -20,7 +20,7 @@ function startAnimation(startSeconds = 0) {
   const startTime = 0;
 
   function update() {
-    // 秒数の更新
+    // 秒数の更新(ヘッドレスChromium環境下では時間の進みが違うのでwindow.__AUDIO2MOVIE_TIME__を用いる)
     const elapsed = (window.__AUDIO2MOVIE_TIME__ - startTime) / 1000;
     timerDisplay.textContent = (startSeconds + elapsed).toFixed(2) + 's';
 
