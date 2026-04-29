@@ -17,11 +17,11 @@ function startAnimation(startSeconds = 0) {
   let y = window.innerHeight / 2;
   let dx = 4; // 横方向の速度
   let dy = 4; // 縦方向の速度
-  const startTime = performance.now();
+  const startTime = 0;
 
   function update() {
     // 秒数の更新
-    const elapsed = (performance.now() - startTime) / 1000;
+    const elapsed = (window.__AUDIO2MOVIE_TIME__ - startTime) / 1000;
     timerDisplay.textContent = (startSeconds + elapsed).toFixed(2) + 's';
 
     // 移動ロジック
