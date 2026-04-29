@@ -44,7 +44,7 @@ h1 {
   position: relative;
   z-index: 1;
   /* ぼんやりと浮かび上がるアニメーションを適用 */
-  animation: logoFadeIn 1s ease-out forwards;
+  animation: logoFadeIn 1s ease-out 1s both;
 }
 
 #scene2 .photo h2,
