@@ -55,7 +55,8 @@ h1 {
 /* Scene 02 全体のレイアウト設定 */
 
 /* ロゴ: 左上に配置 */
-#scene2 .scene {
+#scene2 .scene,
+#scene3 .scene {
   position: absolute;
   top: 40px;
   left: 120px;
@@ -195,7 +196,8 @@ h1 {
 }
 
 /* ビジュアライザー: ボードとキーワードの間に配置 */
-#scene2 .visualizer {
+#scene2 .visualizer,
+#scene3 .visualizer {
   position: absolute;
   bottom: 160px;
   left: 730px;
@@ -209,7 +211,8 @@ h1 {
   align-items: center;
 }
 
-#scene2 #visualizer {
+#scene2 #visualizer,
+#scene3 #visualizer {
   width: 800px;
   height: 250px;
   max-width: 800px;

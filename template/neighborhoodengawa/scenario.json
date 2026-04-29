@@ -17,7 +17,15 @@
       }
     },
     {
-      "video": "03.mp4"
+      "html": "03.html",
+      "duration": 35,
+      "transition": {
+        "name": "fade",
+        "duration": 1
+      }
+    },
+    {
+      "video": "04.mp4"
     }
   ]
 }
