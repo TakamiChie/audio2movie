@@ -29,6 +29,21 @@ def main() -> None:
     parser.add_argument(
         "--noaudio", action="store_true", help="Do not mux audio into the output video"
     )
+    parser.add_argument(
+        "--param",
+        action="append",
+        help="Custom parameters for JavaScript as 'name=value'. Can be specified multiple times.",
+    )
+    parser.add_argument(
+        "--param-text",
+        action="append",
+        help="Custom parameters for JavaScript where value is a file path as 'name=path'. The file content will be read.",
+    )
+    parser.add_argument(
+        "--param-binary",
+        action="append",
+        help="Custom parameters for JavaScript where value is a file path as 'name=path'. The file content will be read.",
+    )
 
     args = parser.parse_args()
 
@@ -90,7 +105,71 @@ def main() -> None:
             parser.error("Audio path is required when not in test mode")
         audio_path = Path(args.audio)
 
+    params = {}
+
+    if args.param:
+        for item in args.param:
+            if "=" in item:
+                key, value = item.split("=", 1)
+            else:
+                key, value = item, ""
+            if key in params:
+                parser.error(f"Duplicate parameter key: {key}")
+            params[key] = value
+
+    if args.param_text:
+        for item in args.param_text:
+            if "=" not in item:
+                parser.error(f"--param-text must be in 'name=value' format: {item}")
+            key, value = item.split("=", 1)
+            if key in params:
+                parser.error(f"Duplicate parameter key: {key}")
+
+            p = Path(value)
+            if not p.exists():
+                parser.error(f"Parameter file not found: {value}")
+            params[key] = p.read_text(encoding="utf-8")
+
+    if args.param_binary:
+        for item in args.param_binary:
+            if "=" not in item:
+                parser.error(f"--param-binary must be in 'name=value' format: {item}")
+            key, value = item.split("=", 1)
+            if key in params:
+                parser.error(f"Duplicate parameter key: {key}")
+
+            p = Path(value)
+            if not p.exists():
+                parser.error(f"Parameter file not found: {value}")
+            params[key] = p.read_bytes()
+
+    # デバッグ: paramsの内容を表示(あとでユーザーサイドからも実行可能にします)
+    if params and False:
+        print("\n--- Custom Parameters (params) ---")
+        for key, value in params.items():
+            display_value = ""
+            if isinstance(value, str):
+                # 文字列をUTF-8でエンコードしてバイト長をチェック
+                value_bytes = value.encode("utf-8")
+                if len(value_bytes) <= 100:
+                    display_value = value
+                else:
+                    # 先頭10バイトをデコードし、不正なシーケンスは置換
+                    display_value = (
+                        value_bytes[:10].decode("utf-8", errors="replace")
+                        + "... (truncated)"
+                    )
+            elif isinstance(value, bytes):
+                if len(value) <= 100:
+                    display_value = repr(value)  # バイト列はreprで表示してb''を付ける
+                else:
+                    display_value = repr(value[:10]) + "... (truncated)"
+            else:
+                display_value = str(value)
+            print(f"  {key}: {display_value}")
+        print("----------------------------------\n")
     try:
+
         create_movie(
             audio_path=audio_path,
             template_name=template_name,
@@ -101,6 +180,7 @@ def main() -> None:
             fps=args.fps,
             keep_work=args.keep_work,
             no_audio=args.noaudio,
+            params=params,
         )
     finally:
         if args.testtpl and audio_path and audio_path.exists():

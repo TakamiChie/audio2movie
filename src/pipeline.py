@@ -68,6 +68,7 @@ def create_movie(
     fps: int,
     keep_work: bool = False,
     no_audio: bool = False,
+    params: dict[str, str] | None = None,
 ) -> None:
     require_ffmpeg()
 
@@ -124,6 +125,7 @@ def create_movie(
                     audio_data=audio_data,
                     audio_start_time=current_offset,
                     audio_sample_rate=audio_sample_rate,
+                    params=params,
                 )
 
             scene_videos.append(scene_video)
