@@ -143,7 +143,33 @@ def main() -> None:
                 parser.error(f"Parameter file not found: {value}")
             params[key] = p.read_bytes()
 
+    # デバッグ: paramsの内容を表示(あとでユーザーサイドからも実行可能にします)
+    if params and False:
+        print("\n--- Custom Parameters (params) ---")
+        for key, value in params.items():
+            display_value = ""
+            if isinstance(value, str):
+                # 文字列をUTF-8でエンコードしてバイト長をチェック
+                value_bytes = value.encode("utf-8")
+                if len(value_bytes) <= 100:
+                    display_value = value
+                else:
+                    # 先頭10バイトをデコードし、不正なシーケンスは置換
+                    display_value = (
+                        value_bytes[:10].decode("utf-8", errors="replace")
+                        + "... (truncated)"
+                    )
+            elif isinstance(value, bytes):
+                if len(value) <= 100:
+                    display_value = repr(value)  # バイト列はreprで表示してb''を付ける
+                else:
+                    display_value = repr(value[:10]) + "... (truncated)"
+            else:
+                display_value = str(value)
+            print(f"  {key}: {display_value}")
+        print("----------------------------------\n")
     try:
+
         create_movie(
             audio_path=audio_path,
             template_name=template_name,
