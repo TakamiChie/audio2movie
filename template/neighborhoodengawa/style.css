@@ -8,6 +8,7 @@ body {
   align-items: center;
   overflow: hidden;
   position: relative;
+  --bg-image: url('photo.png');
 }
 
 /* 背景画像の設定とぼかし加工 */
@@ -18,7 +19,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('photo.png');
+  background-image: var(--bg-image);
   background-size: cover;
   background-position: center;
   filter: blur(30px);
