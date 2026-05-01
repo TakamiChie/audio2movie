@@ -29,6 +29,11 @@ def main() -> None:
     parser.add_argument(
         "--noaudio", action="store_true", help="Do not mux audio into the output video"
     )
+    parser.add_argument(
+        "--param",
+        action="append",
+        help="Custom parameters for JavaScript as 'name=value'. Can be specified multiple times.",
+    )
 
     args = parser.parse_args()
 
@@ -90,6 +95,15 @@ def main() -> None:
             parser.error("Audio path is required when not in test mode")
         audio_path = Path(args.audio)
 
+    params = {}
+    if args.param:
+        for item in args.param:
+            if "=" in item:
+                key, value = item.split("=", 1)
+                params[key] = value
+            else:
+                params[item] = ""
+
     try:
         create_movie(
             audio_path=audio_path,
@@ -101,6 +115,7 @@ def main() -> None:
             fps=args.fps,
             keep_work=args.keep_work,
             no_audio=args.noaudio,
+            params=params,
         )
     finally:
         if args.testtpl and audio_path and audio_path.exists():

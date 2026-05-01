@@ -18,6 +18,25 @@
       ]
     },
     {
+      "name": "d:10秒ムービー(パラメータ追加版)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "audio2movie.py",
+      "console": "integratedTerminal",
+      "args": [
+        "./data/sample10.mp3",
+        "sample2",
+        "./out/sample.mp4",
+        "--keep-work",
+        "--param",
+        "title=Hello World!",
+        "--param",
+        "items=./template/sample2/items.json",
+        "--param",
+        "photo=./template/sample2/photo.jpg"
+      ]
+    },
+    {
       "name": "d:67秒ムービー",
       "type": "debugpy",
       "request": "launch",

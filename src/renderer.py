@@ -16,6 +16,7 @@ async def render_html_to_video(
     audio_data: list[float] | None = None,
     audio_start_time: float = 0.0,
     audio_sample_rate: int = 1000,
+    params: dict[str, str] | None = None,
 ) -> None:
     total_frames = max(1, round(duration * fps))
     frame_interval_ms = 1000 / fps
@@ -51,19 +52,32 @@ async def render_html_to_video(
         async with async_playwright() as p:
             browser = await p.chromium.launch()
             page = await browser.new_page(viewport={"width": width, "height": height})
+
+            # JavaScriptからのconsoleログをキャプチャしてPythonの標準出力に表示
+            page.on("console", lambda msg: print(f"\n[JS {msg.type}] {msg.text}"))
+
             url = html_path.resolve().as_uri()
             await page.goto(url, wait_until="networkidle")
 
             # 音声データをブラウザ側に注入
             await page.evaluate(
-                "([data, start, rate]) => { "
+                "([data, start, rate, params]) => { "
                 "window.__AUDIO2MOVIE_AUDIO_DATA__ = data; "
                 "window.__AUDIO2MOVIE_AUDIO_START_TIME__ = start; "
                 "window.__AUDIO2MOVIE_AUDIO_SAMPLE_RATE__ = rate; "
+                "window.__AUDIO2MOVIE_PARAMS__ = params || {}; "
                 "}",
-                [audio_data, audio_start_time, audio_sample_rate],
+                [audio_data, audio_start_time, audio_sample_rate, params],
             )
 
+            await page.evaluate(
+                """(params) => {
+                    if (typeof window.init === 'function') {
+                        window.init(params);
+                    }
+                }""",
+                params,
+            )
             for frame in range(total_frames):
                 await page.evaluate(
                     """(ms) => {
@@ -107,6 +121,7 @@ def render_scene(
     audio_data: list[float] | None = None,
     audio_start_time: float = 0.0,
     audio_sample_rate: int = 1000,
+    params: dict[str, str] | None = None,
 ) -> None:
     asyncio.run(
         render_html_to_video(
@@ -119,5 +134,6 @@ def render_scene(
             audio_data,
             audio_start_time,
             audio_sample_rate,
+            params,
         )
     )
