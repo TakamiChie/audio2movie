@@ -34,6 +34,16 @@ def main() -> None:
         action="append",
         help="Custom parameters for JavaScript as 'name=value'. Can be specified multiple times.",
     )
+    parser.add_argument(
+        "--param-text",
+        action="append",
+        help="Custom parameters for JavaScript where value is a file path as 'name=path'. The file content will be read.",
+    )
+    parser.add_argument(
+        "--param-binary",
+        action="append",
+        help="Custom parameters for JavaScript where value is a file path as 'name=path'. The file content will be read.",
+    )
 
     args = parser.parse_args()
 
@@ -96,13 +106,42 @@ def main() -> None:
         audio_path = Path(args.audio)
 
     params = {}
+
     if args.param:
         for item in args.param:
             if "=" in item:
                 key, value = item.split("=", 1)
-                params[key] = value
             else:
-                params[item] = ""
+                key, value = item, ""
+            if key in params:
+                parser.error(f"Duplicate parameter key: {key}")
+            params[key] = value
+
+    if args.param_text:
+        for item in args.param_text:
+            if "=" not in item:
+                parser.error(f"--param-text must be in 'name=value' format: {item}")
+            key, value = item.split("=", 1)
+            if key in params:
+                parser.error(f"Duplicate parameter key: {key}")
+
+            p = Path(value)
+            if not p.exists():
+                parser.error(f"Parameter file not found: {value}")
+            params[key] = p.read_text(encoding="utf-8")
+
+    if args.param_binary:
+        for item in args.param_binary:
+            if "=" not in item:
+                parser.error(f"--param-binary must be in 'name=value' format: {item}")
+            key, value = item.split("=", 1)
+            if key in params:
+                parser.error(f"Duplicate parameter key: {key}")
+
+            p = Path(value)
+            if not p.exists():
+                parser.error(f"Parameter file not found: {value}")
+            params[key] = p.read_bytes()
 
     try:
         create_movie(

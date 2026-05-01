@@ -30,10 +30,10 @@
         "--keep-work",
         "--param",
         "title=Hello World!",
-        "--param",
+        "--param-text",
         "items=./template/sample2/items.json",
-        "--param",
-        "photo=./template/sample2/photo.jpg"
+        "--param-binary",
+        "photo=./template/sample2/image.png"
       ]
     },
     {
