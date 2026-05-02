@@ -147,6 +147,7 @@ h1 {
   margin: 0 0 50px 0;
   padding-left: 15px;
   /* 内容を字下げしてラベルとの関連を明確に */
+  overflow: hidden;
 }
 
 /* キーワード: 右下に配置 */
@@ -194,6 +195,7 @@ h1 {
   font-size: 2.0rem;
   font-weight: bold;
   margin: 0;
+  overflow: hidden;
 }
 
 /* ビジュアライザー: ボードとキーワードの間に配置 */
@@ -230,4 +232,19 @@ h1 {
     opacity: 1;
     filter: blur(0);
   }
+}
+
+/* 一文字ずつのワイプインエフェクト */
+.char-wipe-in {
+  display: inline-block;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.7s ease-out, opacity 0.5s ease-out;
+  white-space: pre;
+  /* 空白文字を維持 */
+}
+
+.char-wipe-in.is-visible {
+  transform: translateY(0);
+  opacity: 1;
 }

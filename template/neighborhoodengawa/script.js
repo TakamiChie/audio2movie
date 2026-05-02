@@ -13,6 +13,32 @@ function initVisualizer(canvasId) {
 }
 
 /**
+ * 文字を分割してワイプインアニメーションを適用する
+ * @param {HTMLElement} element 対象の要素
+ * @param {number} baseDelay 開始遅延（ミリ秒）
+ */
+function applyWipeInEffect(element, baseDelay) {
+  if (!element) return;
+
+  const text = element.textContent;
+  element.innerHTML = ''; // 一旦クリア
+
+  const chars = [...text].map((char) => {
+    const span = document.createElement('span');
+    span.textContent = char;
+    span.classList.add('char-wipe-in');
+    element.appendChild(span);
+    return span;
+  });
+
+  chars.forEach((span, index) => {
+    setTimeout(() => {
+      span.classList.add('is-visible');
+    }, baseDelay + index * 50); // 一文字ごとに50msずらす
+  });
+}
+
+/**
  * レンダラーの準備完了後に呼び出される
  * @param {dict[]} params パラメータ。まちのえんがわキャストの場合、以下のような内容が渡される
  * {
@@ -26,9 +52,18 @@ function initVisualizer(canvasId) {
 window.init = function (params) {
   console.log(document.body.id);
   if (document.body.id === 'scene2') {
-    document.getElementById('GuestOrganization').textContent = params.organization || '';
-    document.getElementById('GuestName').textContent = params.name || '';
-    document.getElementById('keyword').textContent = params.keyword || '';
+    const orgEl = document.getElementById('GuestOrganization');
+    const nameEl = document.getElementById('GuestName');
+    const keyEl = document.getElementById('keyword');
+
+    orgEl.textContent = params.organization || '';
+    nameEl.textContent = params.name || '';
+    keyEl.textContent = params.keyword || '';
+
+    // アニメーションの適用
+    applyWipeInEffect(orgEl, 1000);       // 即時
+    applyWipeInEffect(nameEl, 1500);   // 1秒遅延
+    applyWipeInEffect(keyEl, 2000);    // 1.5秒遅延
   }
   if (params.photo) {
     let imageUrl;
