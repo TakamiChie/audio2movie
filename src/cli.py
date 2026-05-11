@@ -48,9 +48,10 @@ def main() -> None:
     args = parser.parse_args()
 
     start_time = datetime.now()
-    print(f"動画作成開始: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     template_name = args.template
+    if template_name == "assets":
+        raise ValueError("assets はテンプレートとして指定できません")
     output_path_str = args.output
 
     # Handle argument mapping when --testtpl is used and audio is omitted
@@ -59,6 +60,8 @@ def main() -> None:
             # Adjust arguments: template output --testtpl N
             output_path_str = args.template
             template_name = args.audio
+            if template_name == "assets":
+                raise ValueError("assets はテンプレートとして指定できません")
             if not template_name:
                 parser.error(
                     "--testtpl mode requires at least template name and output path"
@@ -169,6 +172,8 @@ def main() -> None:
             print(f"  {key}: {display_value}")
         print("----------------------------------\n")
     try:
+
+        print(f"動画作成開始: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         create_movie(
             audio_path=audio_path,
