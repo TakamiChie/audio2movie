@@ -1,17 +1,22 @@
 let visualizerCanvas = null;
 let visualizerCtx = null;
+let visualizerColors = ['hsl(0, 100%, 50%)', 'hsl(60, 100%, 50%)', 'hsl(120, 100%, 50%)'];
 
 /**
  * オーディオビジュアライザーを初期化する
  * @param {string} canvasId キャンバス要素のID
+ * @param {string[]} colors ビジュアライザーのバーカラー配列
  */
-function initVisualizer(canvasId) {
+function initVisualizer(canvasId, colors = ['hsl(0, 100%, 50%)', 'hsl(60, 100%, 50%)', 'hsl(120, 100%, 50%)']) {
   visualizerCanvas = document.getElementById(canvasId);
   if (!visualizerCanvas) {
     console.warn(`ビジュアライザー対象のキャンバスが見つかりません: ${canvasId}`);
     return;
   }
   visualizerCtx = visualizerCanvas.getContext('2d');
+  if (Array.isArray(colors) && colors.length > 0) {
+    visualizerColors = colors;
+  }
 }
 
 /**
@@ -38,14 +43,13 @@ window.drawVisualizer = function (ms) {
   const barWidth = (canvas.width / barCount) - barSpacing;
 
   const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
-  const r = 'hsl(0, 100%, 50%)';
-  const g = 'hsl(120, 100%, 50%)';
-  const y = 'hsl(60, 100%, 50%)';
-  gradient.addColorStop(0, r);
-  gradient.addColorStop(0.25, y);
-  gradient.addColorStop(0.5, g);
-  gradient.addColorStop(0.75, y);
-  gradient.addColorStop(1, r);
+  const mirroredColors = visualizerColors.length > 1
+    ? [...visualizerColors, ...visualizerColors.slice(0, -1).reverse()]
+    : visualizerColors;
+  mirroredColors.forEach((color, index) => {
+    const stop = mirroredColors.length === 1 ? 0 : index / (mirroredColors.length - 1);
+    gradient.addColorStop(stop, color);
+  });
   ctx.fillStyle = gradient;
 
   const globalTimeSec = (currentTimeMs / 1000) + startTimeSec;
