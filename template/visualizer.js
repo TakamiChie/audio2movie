@@ -63,3 +63,18 @@ window.drawVisualizer = function (ms) {
     ctx.fillRect(x, y, barWidth, barHeight);
   }
 };
+
+
+/**
+ * 共通の描画エントリーポイントを設定する
+ * 既存のwindow.drawがある場合は先に実行してからビジュアライザーを描画する
+ */
+(function setupDrawEntryPoint() {
+  const previousDraw = window.draw;
+  window.draw = function (ms) {
+    if (typeof previousDraw === 'function') {
+      previousDraw(ms);
+    }
+    window.drawVisualizer(ms);
+  };
+})();

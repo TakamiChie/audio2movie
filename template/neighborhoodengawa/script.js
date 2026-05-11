@@ -89,13 +89,3 @@ window.init = function (params) {
   }
 
 }
-
-/**
- * レンダラーから各フレームで呼び出される描画メインループ
- * @param {number} ms 現在のフレームの再生位置(ミリ秒)
- */
-window.draw = function (ms) {
-  if (window.drawVisualizer) {
-    window.drawVisualizer(ms);
-  }
-};
