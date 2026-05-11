@@ -48,7 +48,6 @@ def main() -> None:
     args = parser.parse_args()
 
     start_time = datetime.now()
-    print(f"動画作成開始: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     template_name = args.template
     if template_name == "assets":
@@ -173,6 +172,8 @@ def main() -> None:
             print(f"  {key}: {display_value}")
         print("----------------------------------\n")
     try:
+
+        print(f"動画作成開始: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         create_movie(
             audio_path=audio_path,
