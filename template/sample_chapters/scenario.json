@@ -1,0 +1,28 @@
+{
+  "scenes": [
+    {
+      "html": "01.html",
+      "duration": 4,
+      "transition": {
+        "name": "fade",
+        "duration": 1
+      }
+    },
+    {
+      "html": "02.html",
+      "duration": "rem",
+      "transition": {
+        "name": "wipeleft",
+        "duration": 1
+      }
+    },
+    {
+      "html": "03.html",
+      "duration": 4,
+      "transition": {
+        "name": "fade",
+        "duration": 1
+      }
+    }
+  ]
+}
