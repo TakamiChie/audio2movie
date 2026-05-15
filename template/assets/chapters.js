@@ -14,6 +14,23 @@ function convertSecondsToMs(secondsValue) {
 }
 
 /**
+ * シーン内時刻と音声開始オフセットから音源全体の再生時刻（ミリ秒）を求める
+ * @param {number|undefined} sceneMs シーン内の再生時刻（ミリ秒）
+ * @returns {number} 音源全体の再生時刻（ミリ秒）
+ */
+function getGlobalAudioTimeMs(sceneMs) {
+  const localMs = Number.isFinite(sceneMs)
+    ? sceneMs
+    : Number.isFinite(window.__AUDIO2MOVIE_TIME__)
+      ? window.__AUDIO2MOVIE_TIME__
+      : 0;
+  const startTimeSec = Number.isFinite(window.__AUDIO2MOVIE_AUDIO_START_TIME__)
+    ? window.__AUDIO2MOVIE_AUDIO_START_TIME__
+    : 0;
+  return localMs + (startTimeSec * 1000);
+}
+
+/**
  * application/json+chapters 形式のデータからチャプター配列を抽出する
  * @param {object|string} chaptersData チャプターデータ（オブジェクトまたはJSON文字列）
  * @returns {object[]} 正規化したチャプター配列
@@ -95,12 +112,12 @@ function renderChapter(chapter) {
 
 /**
  * 指定した再生時刻に一致するチャプターを検索して表示する
- * @param {number} ms 現在の再生位置（ミリ秒）
+ * @param {number} ms 現在のシーン再生位置（ミリ秒）
  */
 function updateChapterDisplay(ms) {
   if (!chapterDisplayElement || chapterList.length === 0) return;
 
-  const currentMs = Number.isFinite(ms) ? ms : (window.__AUDIO2MOVIE_TIME__ || 0);
+  const currentMs = getGlobalAudioTimeMs(ms);
 
   const nextIndex = chapterList.findIndex((chapter) => {
     return currentMs >= chapter.startMs && currentMs < chapter.endMs;
