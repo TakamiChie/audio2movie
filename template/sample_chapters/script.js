@@ -3,36 +3,26 @@
  * application/json+chapters 形式を想定
  */
 const sampleChapters = {
+  version: '1.2.0',
   chapters: [
     {
-      startMs: 0,
-      endMs: 2500,
-      title: '導入',
-      description: '番組のテーマを紹介します'
+      startTime: '0.0',
+      endTime: '2.5',
+      title: '導入'
     },
     {
-      startMs: 2500,
-      endMs: 5500,
-      title: '前半',
-      description: '前半のトークパートです'
+      startTime: '2.5',
+      endTime: '5.5',
+      title: '前半'
     },
     {
-      startMs: 5500,
-      endMs: 9000,
-      title: '中盤',
-      description: '核心となる内容を説明します'
+      startTime: '5.5',
+      endTime: '9.0',
+      title: '中盤'
     },
     {
-      startMs: 9000,
-      endMs: 13000,
-      title: '後半',
-      description: 'まとめに向けて話を展開します'
-    },
-    {
-      startMs: 13000,
-      endMs: 999999,
-      title: '締め',
-      description: 'エンディングです'
+      startTime: '9.0',
+      title: '締め'
     }
   ]
 };

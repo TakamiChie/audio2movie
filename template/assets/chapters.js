@@ -3,6 +3,17 @@ let chapterList = [];
 let currentChapterIndex = -1;
 
 /**
+ * 秒数（小数可）をミリ秒へ変換する
+ * @param {number|string|null|undefined} secondsValue 秒数
+ * @returns {number} ミリ秒
+ */
+function convertSecondsToMs(secondsValue) {
+  const seconds = Number(secondsValue);
+  if (!Number.isFinite(seconds)) return Number.NaN;
+  return seconds * 1000;
+}
+
+/**
  * application/json+chapters 形式のデータからチャプター配列を抽出する
  * @param {object|string} chaptersData チャプターデータ（オブジェクトまたはJSON文字列）
  * @returns {object[]} 正規化したチャプター配列
@@ -20,29 +31,49 @@ function normalizeChapters(chaptersData) {
     }
   }
 
-  const chapters = Array.isArray(parsed)
-    ? parsed
-    : Array.isArray(parsed.chapters)
-      ? parsed.chapters
+  const chapters = Array.isArray(parsed?.chapters)
+    ? parsed.chapters
+    : Array.isArray(parsed)
+      ? parsed
       : [];
 
-  return chapters
+  const normalized = chapters
     .map((chapter, index) => {
-      const startMs = chapter.startMs ?? chapter.start_ms ?? chapter.start ?? chapter.from ?? 0;
-      const endMs = chapter.endMs ?? chapter.end_ms ?? chapter.end ?? chapter.to ?? Number.POSITIVE_INFINITY;
-      const title = chapter.title ?? chapter.name ?? `チャプター ${index + 1}`;
-      const description = chapter.description ?? chapter.text ?? '';
+      const startMs = chapter.startTime !== undefined
+        ? convertSecondsToMs(chapter.startTime)
+        : Number(chapter.startMs ?? chapter.start_ms ?? chapter.start ?? chapter.from ?? Number.NaN);
+
+      const hasEndTime = chapter.endTime !== undefined;
+      const hasLegacyEnd = chapter.endMs !== undefined
+        || chapter.end_ms !== undefined
+        || chapter.end !== undefined
+        || chapter.to !== undefined;
+
+      const endMs = hasEndTime
+        ? convertSecondsToMs(chapter.endTime)
+        : hasLegacyEnd
+          ? Number(chapter.endMs ?? chapter.end_ms ?? chapter.end ?? chapter.to)
+          : Number.NaN;
 
       return {
         index,
-        startMs: Number(startMs),
-        endMs: Number(endMs),
-        title,
-        description
+        startMs,
+        endMs,
+        title: chapter.title ?? chapter.name ?? `チャプター ${index + 1}`,
+        description: chapter.description ?? chapter.text ?? ''
       };
     })
     .filter((chapter) => Number.isFinite(chapter.startMs))
     .sort((a, b) => a.startMs - b.startMs);
+
+  normalized.forEach((chapter, index) => {
+    if (!Number.isFinite(chapter.endMs)) {
+      const nextChapter = normalized[index + 1];
+      chapter.endMs = nextChapter ? nextChapter.startMs : Number.POSITIVE_INFINITY;
+    }
+  });
+
+  return normalized;
 }
 
 /**
