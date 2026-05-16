@@ -49,7 +49,8 @@ h1 {
 }
 
 #scene2 .photo h2,
-#scene2 .keyword h2 {
+#scene2 .keyword h2,
+#scene2 .chapter-display h2 {
   display: none;
 }
 
@@ -202,7 +203,7 @@ h1 {
 #scene2 .visualizer,
 #scene3 .visualizer {
   position: absolute;
-  bottom: 160px;
+  bottom: 200px;
   left: 730px;
   background-color: rgba(0, 0, 0, 0.8);
   border-radius: 20px;
@@ -219,6 +220,25 @@ h1 {
   width: 800px;
   height: 250px;
   max-width: 800px;
+}
+
+/* チャプター表示: ビジュアライザーの下に配置 */
+.chapter-display {
+  position: absolute;
+  bottom: 90px;
+  left: 730px;
+  height: 100px;
+  font-size: 24px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid black;
+  border-radius: 20px;
+  /* ボードの幅 + 余白 */
+  right: 550px;
+  /* キーワードの幅 + 余白 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* ロゴの出現アニメーション定義 */
