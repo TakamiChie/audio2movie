@@ -50,6 +50,7 @@ window.init = function (params) {
     applyWipeInEffect(orgEl, 1000);       // 即時
     applyWipeInEffect(nameEl, 1500);   // 1秒遅延
     applyWipeInEffect(keyEl, 2000);    // 1.5秒遅延
+    initChapterDisplay("chapter-display", params.chapters);
   }
   if (params.photo) {
     let imageUrl;

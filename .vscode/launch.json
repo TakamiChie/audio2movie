@@ -37,6 +37,19 @@
       ]
     },
     {
+      "name": "d:チャプター付き10秒ムービー",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "audio2movie.py",
+      "console": "integratedTerminal",
+      "args": [
+        "./data/sample10.mp3",
+        "sample_chapters",
+        "./out/sample.mp4",
+        "--keep-work"
+      ]
+    },
+    {
       "name": "d:67秒ムービー",
       "type": "debugpy",
       "request": "launch",
